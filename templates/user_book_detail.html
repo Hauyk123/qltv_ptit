@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết Sách</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: { 600:'#4f46e5' } } } } }</script>
+</head>
+<body class="bg-gray-100 font-sans h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-4xl h-[85vh] shadow-2xl flex flex-col overflow-hidden relative">
+        <div class="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative shrink-0">
+            <button onclick="history.back()" class="absolute top-4 left-4 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-md transition z-10"><i class="fas fa-arrow-left"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto bg-white px-8 pb-8 relative z-0">
+            <div class="flex flex-col md:flex-row gap-8 -mt-12">
+                <div class="w-full md:w-1/3 flex flex-col items-center">
+                    <div class="w-48 aspect-[2/3] bg-indigo-50 rounded-xl shadow-2xl border-4 border-white flex items-center justify-center overflow-hidden relative">
+                        <img id="b-img" src="" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
+                    </div>
+                    <button id="btn-borrow" onclick="borrowBook()" class="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> Thêm vào giỏ</button>
+                </div>
+
+                <div class="flex-1 pt-12 md:pt-16">
+                    <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wide" id="b-cat">...</span>
+                    <h2 class="text-3xl font-extrabold text-slate-800 leading-tight mt-2 mb-1" id="b-title">Loading...</h2>
+                    <p class="text-lg text-slate-500 font-medium">Tác giả: <span class="text-indigo-600 font-bold" id="b-author">...</span></p>
+
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold">Nhà xuất bản</p>
+                            <p class="font-bold text-slate-700" id="b-pub">---</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold">Năm xuất bản</p>
+                            <p class="font-bold text-slate-700" id="b-year">---</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase font-bold">Ngôn ngữ</p>
+                            <p class="font-bold text-slate-700" id="b-lang">---</p>
+                        </div>
+                        <div class="bg-indigo-50 p-2 rounded-lg border border-indigo-100">
+                            <p class="text-xs text-indigo-500 uppercase font-bold"><i class="fas fa-map-marker-alt mr-1"></i> Vị trí kệ</p>
+                            <p class="font-bold text-indigo-800 text-lg" id="b-loc">...</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 my-6 border-y border-slate-100 py-6">
+                        <div class="text-center border-r"><p class="text-slate-400 text-xs uppercase font-bold">Tổng số</p><p class="text-slate-800 font-bold text-lg" id="b-total">0</p></div>
+                        <div class="text-center"><p class="text-slate-400 text-xs uppercase font-bold">Khả dụng</p><p class="text-emerald-600 font-bold text-lg" id="b-avail">0</p></div>
+                    </div>
+
+                    <div class="prose text-slate-600 text-justify">
+                        <h3 class="font-bold text-slate-800 mb-2">Thông tin lưu ý</h3>
+                        <p>Cuốn sách này là tài liệu quan trọng trong thư viện. Vui lòng bảo quản cẩn thận khi mượn. Thời hạn mượn tối đa là 14 ngày.</p>
+                        <p class="mt-2 text-sm italic bg-yellow-50 p-2 rounded border border-yellow-100 text-yellow-800"><i class="fas fa-info-circle"></i> Vui lòng mang thẻ sinh viên khi đến nhận sách.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const isbn = window.location.pathname.split('/').pop();
+        let bookInfo = null;
+
+        // Gọi API lấy thông tin sách
+        fetch(`/api/book/${isbn}`).then(r=>r.json()).then(d => {
+            const b = d.book;
+            bookInfo = b;
+
+            // Điền dữ liệu vào giao diện
+            document.getElementById('b-title').innerText = b.title;
+            document.getElementById('b-author').innerText = b.author;
+            document.getElementById('b-cat').innerText = b.category;
+
+            // Ảnh bìa
+            document.getElementById('b-img').src = b.image_url || 'https://via.placeholder.com/300x450?text=No+Image';
+
+            // Thông tin chi tiết
+            document.getElementById('b-pub').innerText = b.publisher || '---';
+            document.getElementById('b-year').innerText = b.year || '---';
+            document.getElementById('b-lang').innerText = b.language || '---';
+
+            // Cập nhật vị trí kệ (Nếu chưa có dữ liệu sẽ hiện "Liên hệ thủ thư")
+            document.getElementById('b-loc').innerText = b.location || 'Liên hệ thủ thư';
+
+            // Số lượng
+            document.getElementById('b-total').innerText = b.qty_total;
+            document.getElementById('b-avail').innerText = b.qty_avail;
+
+            // Nút mượn
+            const btn = document.getElementById('btn-borrow');
+            if(b.qty_avail <= 0) {
+                btn.disabled = true;
+                btn.innerText = 'Hết sách';
+                btn.className = 'w-full mt-6 py-3 bg-slate-200 text-slate-400 rounded-xl font-bold cursor-not-allowed';
+            }
+        });
+
+        async function borrowBook() {
+            if(bookInfo) {
+                const res = await fetch('/api/cart/add', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({isbn: bookInfo.isbn, title: bookInfo.title, author: bookInfo.author})
+                });
+                const d = await res.json();
+                if(d.status === 'success') {
+                    alert('Đã thêm vào giỏ sách! Vui lòng quay lại trang chủ để xác nhận mượn.');
+                    history.back();
+                } else {
+                    alert(d.message);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

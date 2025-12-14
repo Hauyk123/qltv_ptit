@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hồ sơ cá nhân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca' } } } } }</script>
+</head>
+<body class="bg-gray-100 font-sans h-screen flex overflow-hidden">
+    <aside class="w-72 bg-white border-r border-slate-200 hidden md:flex flex-col h-full shadow-sm z-20">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary-500/30"><i class="fas fa-book-open"></i></div>
+            <div><h1 class="font-bold text-xl text-slate-800 tracking-tight">LibManager</h1><p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">User Portal</p></div>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="/" class="flex items-center gap-3 px-4 py-3.5 text-slate-600 rounded-r-xl border-l-4 border-transparent hover:bg-slate-50 transition"><i class="fas fa-search w-5"></i> Tìm & Mượn sách</a>
+            <a href="/my-books" class="flex items-center gap-3 px-4 py-3.5 text-slate-600 rounded-r-xl border-l-4 border-transparent hover:bg-slate-50 transition"><i class="fas fa-clock w-5"></i> Sách đang mượn</a>
+            <a href="/profile" class="flex items-center gap-3 px-4 py-3.5 rounded-r-xl border-l-4 border-primary-600 bg-gradient-to-r from-primary-50 to-transparent text-primary-700 font-bold transition"><i class="fas fa-id-card w-5"></i> Hồ sơ cá nhân</a>
+        </nav>
+        <div class="p-4 border-t border-slate-100">
+             <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition font-medium text-sm"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10"><h2 class="text-xl font-bold text-slate-800">Hồ sơ & Tài khoản</h2></header>
+        <div class="flex-1 overflow-y-auto p-8 space-y-8 animate-slide-up">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex items-center gap-5 hover:shadow-md transition">
+                    <div class="w-16 h-16 bg-white text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-md ring-4 ring-blue-50"><i class="fas fa-book-reader"></i></div>
+                    <div><p class="text-blue-600 text-xs font-bold uppercase tracking-wider mb-1">Đang mượn</p><p class="text-4xl font-bold text-slate-800" id="stat-borrow">...</p></div>
+                </div>
+                 <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-5 hover:shadow-md transition">
+                    <div class="w-16 h-16 bg-white text-emerald-600 rounded-2xl flex items-center justify-center text-3xl shadow-md ring-4 ring-emerald-50"><i class="fas fa-history"></i></div>
+                    <div><p class="text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">Lịch sử</p><p class="text-4xl font-bold text-slate-800" id="stat-history">...</p></div>
+                </div>
+                 <div class="bg-gradient-to-br from-rose-50 to-pink-50 p-6 rounded-2xl shadow-sm border border-rose-100 flex items-center gap-5 hover:shadow-md transition">
+                    <div class="w-16 h-16 bg-white text-rose-500 rounded-2xl flex items-center justify-center text-3xl shadow-md ring-4 ring-rose-50"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div><p class="text-rose-600 text-xs font-bold uppercase tracking-wider mb-1">Vi phạm</p><p class="text-4xl font-bold text-slate-800">0</p></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-md border border-indigo-50 overflow-hidden">
+                    <div class="p-6 border-b border-indigo-50 bg-gradient-to-r from-indigo-50/80 to-white flex items-center gap-3">
+                         <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm"><i class="fas fa-user"></i></div>
+                        <h3 class="font-bold text-indigo-900 text-lg">Thông tin độc giả</h3>
+                    </div>
+                    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-gradient-to-b from-white to-indigo-50/10">
+                        <div><label class="block text-xs font-bold text-indigo-400 uppercase mb-1.5 ml-1">Họ tên</label><input id="p-name" disabled class="w-full p-3 bg-indigo-50/30 border border-indigo-100 rounded-xl font-bold text-indigo-900"></div>
+                        <div><label class="block text-xs font-bold text-indigo-400 uppercase mb-1.5 ml-1">MSV</label><input id="p-msv" disabled class="w-full p-3 bg-indigo-50/30 border border-indigo-100 rounded-xl font-bold text-indigo-900"></div>
+                        <div class="md:col-span-2"><label class="block text-xs font-bold text-indigo-400 uppercase mb-1.5 ml-1">Email</label><input id="p-email" disabled class="w-full p-3 bg-white border border-slate-200 rounded-xl text-slate-700"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden h-fit">
+                    <div class="p-6 border-b border-slate-200 bg-slate-50/50"><h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-key text-slate-400"></i> Đổi mật khẩu</h3></div>
+                    <form onsubmit="changePassword(event)" class="p-6 space-y-4">
+                        <input type="password" name="old_pass" placeholder="Mật khẩu cũ" required class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-500 text-sm">
+                        <input type="password" name="new_pass" placeholder="Mật khẩu mới (Min 8 ký tự)" required class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-500 text-sm">
+                        <button type="submit" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-lg text-sm">Cập nhật mật khẩu</button>
+                    </form>
+                </div>
+            </div>
+
+             <div class="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+                <div class="p-6 border-b border-emerald-50 bg-gradient-to-r from-emerald-50/50 to-white"><h3 class="font-bold text-emerald-900 flex items-center gap-2"><i class="fas fa-list-ul text-emerald-500"></i> Hoạt động gần đây</h3></div>
+                <table class="w-full text-left border-collapse"><thead class="bg-emerald-50/80 text-xs text-emerald-700 uppercase font-bold border-b border-emerald-100"><tr><th class="p-4 pl-6">Sách</th><th class="p-4">Ngày mượn</th><th class="p-4">Trạng thái</th></tr></thead><tbody id="p-history" class="text-sm divide-y divide-emerald-50"></tbody></table>
+             </div>
+        </div>
+    </main>
+    <script>
+        fetch('/api/user/profile').then(r=>r.json()).then(data => {
+            const u = data.user; document.getElementById('p-name').value = u.fullname; document.getElementById('p-msv').value = u.msv; document.getElementById('p-email').value = u.email;
+            document.getElementById('stat-borrow').innerText = data.history.filter(h=>h.status==='borrowing').length;
+            document.getElementById('stat-history').innerText = data.history.length;
+            document.getElementById('p-history').innerHTML = data.history.map(h => `<tr class="hover:bg-emerald-50/20 transition"><td class="p-4 pl-6 font-bold text-slate-700">${h.book_title}</td><td class="p-4 text-slate-500">${new Date(h.borrow_date).toLocaleDateString('vi-VN')}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs font-bold ${h.status==='borrowing'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${h.status==='borrowing'?'Đang mượn':'Đã trả'}</span></td></tr>`).join('');
+        });
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+        async function changePassword(e) { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); const r = await fetch('/api/user/change-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(f)}); alert((await r.json()).message); if(r.ok) e.target.reset(); }
+    </script>
+</body>
+</html>

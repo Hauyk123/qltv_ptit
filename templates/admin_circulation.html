@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Nghiệp vụ Mượn Trả - LibAdmin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a' } } } } }
+    </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-book-open text-sm"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin</span>
+        </div>
+
+        <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
+            <div>
+                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
+                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
+            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
+            </a>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
+            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+            </a>
+            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+            </a>
+            <a href="/admin/circulation" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+            </a>
+             <a href="/admin/fines" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700/50">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden" x-data="{ tab: 'borrow' }">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-sync-alt text-indigo-600 mr-2"></i> Nghiệp vụ Lưu thông</h2>
+        </header>
+
+        <div class="flex-1 overflow-hidden p-6 flex flex-col md:flex-row gap-6">
+            <div class="w-full md:w-1/3 space-y-6 flex flex-col h-full overflow-y-auto pr-2">
+                <div class="bg-slate-200 p-1 rounded-xl flex font-bold text-sm shadow-inner shrink-0">
+                    <button @click="tab = 'borrow'" :class="tab==='borrow' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'" class="flex-1 py-2 rounded-lg transition">Lập phiếu</button>
+                    <button @click="tab = 'return'" :class="tab==='return' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'" class="flex-1 py-2 rounded-lg transition">Nhận trả</button>
+                    <button @click="tab = 'renew'" :class="tab==='renew' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'" class="flex-1 py-2 rounded-lg transition">Gia hạn</button>
+                </div>
+
+                <div x-show="tab === 'borrow'" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3">1. Thông tin người mượn</h3>
+                    <div class="relative">
+                        <input type="text" placeholder="Nhập MSV hoặc Tên..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" onkeyup="findUser(this.value)">
+                        <div id="user-suggest" class="absolute w-full bg-white shadow-xl rounded-lg mt-1 hidden border z-10 max-h-48 overflow-y-auto"></div>
+                    </div>
+                    <div id="selected-user" class="hidden bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-600 font-bold border"><i class="fas fa-user"></i></div>
+                        <div>
+                            <p class="font-bold text-indigo-900 text-sm" id="u-name">...</p>
+                            <p class="text-xs text-indigo-500"><span id="u-msv">...</span> | Đang mượn: <span id="u-count" class="font-bold">0</span>/5</p>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3 pt-2">2. Thêm sách</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="barcode-input" placeholder="Quét mã vạch..." class="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+                        <button onclick="addBookToCart()" class="bg-emerald-100 text-emerald-600 px-4 rounded-xl hover:bg-emerald-200 transition font-bold"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <button onclick="submitBorrow()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg transition mt-4">Tạo phiếu mượn</button>
+                </div>
+
+                <div x-show="tab === 'return'" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5 h-full flex flex-col justify-center items-center text-center">
+                    <div class="p-6 bg-slate-50 rounded-full mb-4"><i class="fas fa-barcode text-5xl text-slate-300"></i></div>
+                    <h3 class="text-xl font-bold text-slate-700">Quét mã để trả sách</h3>
+                    <input type="text" id="return-input" placeholder="Nhập mã vạch sách..." class="w-full p-4 border-2 border-indigo-100 rounded-xl text-lg outline-none focus:border-indigo-500 text-center font-mono">
+                    <button onclick="handleReturn()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700">Xác nhận trả</button>
+                </div>
+
+                 <div x-show="tab === 'renew'" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3">Gia hạn sách</h3>
+                    <input type="text" placeholder="Nhập MSV..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl" onkeyup="findUserRenew(this.value)">
+                    <div id="renew-user-suggest" class="bg-white shadow-md rounded border hidden"></div>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col overflow-hidden relative">
+                <div x-show="tab === 'borrow'" class="h-full flex flex-col">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Sách chờ tạo phiếu mượn</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-5" id="borrow-list">
+                        <div id="empty-cart" class="text-center text-slate-400 mt-10">Chưa có sách nào được chọn</div>
+                    </div>
+                </div>
+                 <div x-show="tab === 'renew'" class="h-full flex flex-col">
+                    <div class="p-5 border-b border-slate-100 bg-orange-50/30"><h3 class="font-bold text-slate-800">Danh sách sách đang mượn</h3></div>
+                    <div id="renew-list" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        let borrowCart = []; let selectedUserId = null;
+        async function findUser(keyword) {
+             if(keyword.length < 2) { document.getElementById('user-suggest').classList.add('hidden'); return; }
+             const res = await fetch(`/api/admin/find-user?q=${keyword}`);
+             const users = await res.json();
+             const box = document.getElementById('user-suggest');
+             box.innerHTML = users.map(u => `<div onclick="selectUser('${u._id}', '${u.fullname}', '${u.msv}', ${u.borrow_count})" class="p-3 hover:bg-indigo-50 cursor-pointer border-b text-sm font-bold text-slate-700">${u.fullname} (${u.msv})</div>`).join('');
+             box.classList.remove('hidden');
+        }
+        function selectUser(id, name, msv, count) {
+            selectedUserId = id;
+            document.getElementById('u-name').innerText = name;
+            document.getElementById('u-msv').innerText = msv;
+            document.getElementById('u-count').innerText = count;
+            document.getElementById('user-suggest').classList.add('hidden');
+            document.getElementById('selected-user').classList.remove('hidden');
+        }
+        async function addBookToCart() {
+    const code = document.getElementById('barcode-input').value;
+    if(!code) return;
+    const res = await fetch(`/api/admin/check-book/${code}`);
+    const data = await res.json();
+
+    if(data.status === 'success') {
+        // SỬA ĐOẠN NÀY: Cho phép cả 'available' HOẶC 'pending'
+        if(data.book.copy_status !== 'available' && data.book.copy_status !== 'pending') {
+            return alert('Sách này đang được mượn bởi người khác (Borrowed)!');
+        }
+
+        borrowCart.push(data.book);
+        renderCart();
+        document.getElementById('barcode-input').value = '';
+    } else {
+        alert(data.message);
+    }
+}
+        function renderCart() {
+            document.getElementById('borrow-list').innerHTML = borrowCart.map((b,i) => `<div class="flex justify-between p-3 border-b"><span class="font-bold">${b.title}</span><button class="text-red-500" onclick="borrowCart.splice(${i},1);renderCart()"><i class="fas fa-times"></i></button></div>`).join('');
+            document.getElementById('empty-cart').classList.toggle('hidden', borrowCart.length > 0);
+        }
+        async function submitBorrow() {
+            if(!selectedUserId || borrowCart.length===0) return alert('Thiếu thông tin!');
+            const res = await fetch('/api/admin/borrow', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: selectedUserId, barcodes: borrowCart.map(b => b.barcode) })});
+            alert((await res.json()).message); location.reload();
+        }
+        async function handleReturn() {
+            const code = document.getElementById('return-input').value;
+            if(!confirm(`Trả sách: ${code}?`)) return;
+            const res = await fetch('/api/admin/return', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({barcode: code})});
+            const data = await res.json();
+            alert(data.status === 'success' ? `Trả sách thành công! Phạt: ${data.fine}đ` : data.message);
+        }
+        async function findUserRenew(keyword) {
+            if(keyword.length < 2) return;
+            const res = await fetch(`/api/admin/find-user?q=${keyword}`);
+            const users = await res.json();
+            document.getElementById('renew-user-suggest').innerHTML = users.map(u => `<div onclick="loadUserLoans('${u._id}');document.getElementById('renew-user-suggest').innerHTML=''" class="p-3 hover:bg-slate-100 cursor-pointer">${u.fullname}</div>`).join('');
+            document.getElementById('renew-user-suggest').classList.remove('hidden');
+        }
+        async function loadUserLoans(uid) {
+            const res = await fetch(`/api/admin/user-loans/${uid}`);
+            const loans = await res.json();
+            document.getElementById('renew-list').innerHTML = loans.map(l => `
+                <div class="border p-4 rounded-lg flex justify-between bg-slate-50">
+                    <div><h4 class="font-bold text-indigo-700">${l.book_title}</h4><p class="text-xs text-slate-500">Hạn: ${l.due_date_fmt}</p></div>
+                    ${l.is_overdue ? '<span class="text-red-500 text-xs font-bold">Quá hạn</span>' : `<button onclick="submitRenew('${l._id}')" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded font-bold text-sm">Gia hạn</button>`}
+                </div>`).join('');
+        }
+        async function submitRenew(id) { const res = await fetch('/api/admin/renew', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({trans_id: id})}); alert((await res.json()).message); }
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+    </script>
+</body>
+</html>

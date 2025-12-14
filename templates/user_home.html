@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Thông Tin Thư Viện Số</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca' },
+                        secondary: { 500:'#ec4899', 600:'#db2777' }
+                    },
+                    animation: { 'slide-up': 'slideUp 0.4s ease-out forwards' },
+                    keyframes: { slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+    <style>.no-scrollbar::-webkit-scrollbar { display: none; }</style>
+</head>
+<body class="bg-gray-100 text-slate-800 font-sans h-screen flex overflow-hidden selection:bg-primary-500 selection:text-white">
+
+    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-cover bg-center flex items-center justify-center p-4 {{ 'hidden' if session.get('user_id') else '' }}"
+         style="background-image: url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&auto=format&fit=crop&w=2228&q=80');">
+        <div class="absolute inset-0 bg-indigo-900/80 backdrop-blur-sm"></div>
+        <div class="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-slide-up z-10 p-8 pt-10">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-2xl shadow-lg mx-auto flex items-center justify-center mb-4 transform rotate-3">
+                    <i class="fas fa-book-open text-2xl text-white"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Thư Viện Số</h2>
+                <p class="text-slate-500 mt-2 text-sm">Cổng thông tin dành cho độc giả</p>
+            </div>
+            <div class="space-y-5">
+                <div class="group">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Tài khoản</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="text" id="login-user" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition font-medium" placeholder="Mã sinh viên / Username">
+                    </div>
+                </div>
+                <div class="group">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Mật khẩu</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="password" id="login-pass" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition font-medium" placeholder="••••••••">
+                    </div>
+                </div>
+                <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform active:scale-[0.98]">Đăng nhập</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="flex w-full h-full bg-[#f8fafc] {{ 'hidden' if not session.get('user_id') else 'flex' }}">
+
+        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col h-full hidden md:flex z-20 shadow-sm">
+            <div class="p-6 flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary-500/30">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-xl text-slate-800 tracking-tight">LibManager</h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">User Portal</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="/" class="flex items-center gap-3 px-4 py-3.5 rounded-r-xl border-l-4 border-primary-600 bg-gradient-to-r from-primary-50 to-transparent text-primary-700 font-bold transition">
+                    <i class="fas fa-search w-5"></i> Tìm & Mượn sách
+                </a>
+                <a href="/my-books" class="flex items-center gap-3 px-4 py-3.5 text-slate-600 rounded-r-xl border-l-4 border-transparent hover:bg-slate-50 transition">
+                    <i class="fas fa-clock w-5"></i> Sách đang mượn
+                </a>
+                <a href="/profile" class="flex items-center gap-3 px-4 py-3.5 text-slate-600 rounded-r-xl border-l-4 border-transparent hover:bg-slate-50 transition">
+                    <i class="fas fa-id-card w-5"></i> Hồ sơ cá nhân
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-100">
+                <div class="bg-slate-50 rounded-xl p-4 mb-4 flex items-center gap-3 border border-slate-100">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ session.get('fullname', 'User') }}" class="w-10 h-10 rounded-full bg-white shadow-sm">
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold text-slate-800 truncate">{{ session.get('fullname', 'Khách') }}</p>
+                        <p class="text-xs text-green-500 font-bold">Online</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition font-medium text-sm">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-3 flex justify-between items-center sticky top-0 z-10">
+                <h2 class="text-xl font-bold text-slate-800">Tìm kiếm & Mượn sách</h2>
+                <div class="flex items-center gap-4">
+                    <div class="relative group">
+                        <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                        <input id="search-input" type="text" placeholder="Tìm kiếm sách..." class="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none w-64 transition">
+                        <button onclick="loadBooks()" class="absolute right-2 top-1.5 bg-primary-600 text-white px-3 py-0.5 rounded-lg text-xs font-bold hover:bg-primary-700">Tìm</button>
+                    </div>
+                    <button onclick="toggleCart()" class="relative w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center hover:bg-primary-50 hover:text-primary-600 transition group">
+                        <i class="fas fa-shopping-basket text-slate-500 text-lg group-hover:text-primary-600"></i>
+                        <span id="cart-badge" class="absolute -top-1 -right-1 bg-secondary-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold shadow-md hidden transform scale-0 transition-transform duration-300">0</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-8" id="content-area">
+                <div id="book-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="cart-drawer-overlay" onclick="toggleCart()" class="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0"></div>
+    <div id="cart-drawer" class="fixed inset-y-0 right-0 z-[80] w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-6 border-b border-slate-100 bg-gradient-to-r from-primary-50/50 to-white flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-shopping-basket text-primary-600"></i> Giỏ sách</h2>
+            <button onclick="toggleCart()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="cart-items-container" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30"></div>
+        <div class="p-6 border-t border-slate-100 bg-white space-y-3">
+             <div class="flex justify-between items-center mb-2"><span class="text-slate-600 font-medium">Tổng số lượng:</span><span class="text-2xl font-bold text-primary-700" id="cart-total-qty">0</span></div>
+            <button onclick="confirmBorrow()" id="btn-checkout" class="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-bold py-3.5 rounded-xl shadow-lg transition hover:shadow-xl">Xác nhận đăng ký mượn</button>
+        </div>
+    </div>
+
+    <div id="book-detail-modal" class="fixed inset-0 z-[90] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="book-detail-backdrop" onclick="closeBookDetail()"></div>
+        <div class="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center pointer-events-none">
+            <div class="bg-white md:rounded-2xl w-full md:w-[900px] h-[85vh] md:h-auto md:max-h-[90vh] shadow-2xl transform translate-y-full md:translate-y-0 md:scale-95 transition-all duration-300 opacity-0 pointer-events-auto flex flex-col overflow-hidden" id="book-detail-content">
+                <div class="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative shrink-0">
+                    <button onclick="closeBookDetail()" class="absolute top-4 right-4 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center backdrop-blur-md transition z-10"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto bg-white px-8 pb-8 relative z-0 -mt-12">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <div class="w-full md:w-1/3 flex flex-col items-center">
+                            <div class="w-48 aspect-[2/3] bg-indigo-50 rounded-xl shadow-2xl border-4 border-white flex items-center justify-center overflow-hidden relative">
+                                <img id="modal-img" src="" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
+                            </div>
+                            <button id="modal-btn-borrow" onclick="addToCartFromModal()" class="w-full mt-6 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> Thêm vào giỏ</button>
+                        </div>
+                        <div class="flex-1 pt-12 md:pt-16">
+                            <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase" id="modal-cat">...</span>
+                            <h2 class="text-3xl font-extrabold text-slate-800 leading-tight mt-2 mb-1" id="modal-title">...</h2>
+                            <p class="text-lg text-slate-500 font-medium">Tác giả: <span class="text-primary-600 font-bold" id="modal-author">...</span></p>
+
+                            <div class="grid grid-cols-2 gap-4 my-4">
+                                <div><p class="text-xs text-slate-400 uppercase font-bold">NXB</p><p class="font-bold text-slate-700" id="modal-pub">...</p></div>
+                                <div><p class="text-xs text-slate-400 uppercase font-bold">Năm XB</p><p class="font-bold text-slate-700" id="modal-year">...</p></div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 my-6 border-y border-slate-100 py-6">
+                                <div class="text-center border-r"><p class="text-slate-400 text-xs uppercase font-bold">Tổng số</p><p class="text-slate-800 font-bold text-lg" id="modal-total">0</p></div>
+                                <div class="text-center"><p class="text-slate-400 text-xs uppercase font-bold">Khả dụng</p><p class="text-emerald-600 font-bold text-lg" id="modal-avail">0</p></div>
+                            </div>
+                            <p class="text-slate-600 leading-relaxed text-justify">Cuốn sách này là tài liệu quan trọng trong thư viện. Vui lòng bảo quản cẩn thận khi mượn. Thời hạn mượn tối đa là 14 ngày.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentIsbn = null;
+        let currentBookData = null;
+
+        // AUTH Logic
+        async function handleLogin() {
+            const u = document.getElementById('login-user').value;
+            const p = document.getElementById('login-pass').value;
+            try {
+                const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (data.role === 'admin') window.location.href = '/admin'; else window.location.reload();
+                } else showToast(data.message, 'error');
+            } catch (error) { showToast('Lỗi kết nối server!', 'error'); }
+        }
+        async function logout() { await fetch('/api/logout', {method:'POST'}); location.reload(); }
+
+        document.addEventListener('DOMContentLoaded', () => { if(document.getElementById('auth-screen').classList.contains('hidden')) { loadBooks(); loadCart(); } });
+
+        // LOAD BOOKS (Hiển thị ảnh bìa)
+        async function loadBooks() {
+            const q = document.getElementById('search-input').value;
+            const res = await fetch(`/api/books?q=${q}`);
+            const books = await res.json();
+            document.getElementById('book-grid').innerHTML = books.map(b => `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition duration-300 group h-full">
+                    <div class="h-64 bg-slate-100 relative overflow-hidden cursor-pointer" onclick="openBookDetail('${b.isbn}')">
+                        <img src="${b.image_url || 'https://via.placeholder.com/300x450?text=No+Image'}"
+                             class="w-full h-full object-cover transition duration-500 group-hover:scale-110"
+                             onerror="this.src='https://via.placeholder.com/300x450?text=No+Image'">
+                         <div class="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg shadow-sm text-xs font-bold ${b.qty_avail>0?'text-emerald-600':'text-red-500'} flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full ${b.qty_avail>0?'bg-emerald-500':'bg-red-500'}"></span> ${b.qty_avail>0 ? 'Có sẵn: '+b.qty_avail : 'Hết sách'}
+                        </div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col">
+                        <h4 class="font-bold text-slate-900 text-lg mb-1 line-clamp-1 group-hover:text-primary-600 transition cursor-pointer" onclick="openBookDetail('${b.isbn}')">${b.title}</h4>
+                        <p class="text-sm text-slate-500 mb-3">${b.author}</p>
+                        <div class="mt-auto flex justify-between items-center pt-4 border-t border-slate-100">
+                            <span class="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded uppercase tracking-wide">${b.category}</span>
+                            <button onclick="quickAddToCart('${b.isbn}', '${b.title}', '${b.author}')" class="text-primary-600 bg-primary-50 hover:bg-primary-600 hover:text-white p-2.5 rounded-full transition shadow-sm"><i class="fas fa-cart-plus text-lg"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // OPEN DETAIL (Hiển thị ảnh và thông tin thêm)
+        async function openBookDetail(isbn) {
+            const res = await fetch(`/api/book/${isbn}`);
+            const data = await res.json();
+            if(data.status==='error') return;
+            const b = data.book; currentIsbn = isbn; currentBookData = b;
+
+            document.getElementById('modal-title').innerText = b.title;
+            document.getElementById('modal-author').innerText = b.author;
+            document.getElementById('modal-cat').innerText = b.category;
+            document.getElementById('modal-total').innerText = b.qty_total;
+            document.getElementById('modal-avail').innerText = b.qty_avail;
+
+            // New Info
+            document.getElementById('modal-img').src = b.image_url || 'https://via.placeholder.com/300x450?text=No+Image';
+            document.getElementById('modal-pub').innerText = b.publisher || '---';
+            document.getElementById('modal-year').innerText = b.year || '---';
+
+            const btn = document.getElementById('modal-btn-borrow');
+            if(b.qty_avail > 0) {
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-cart-plus"></i> Thêm vào giỏ';
+                btn.className = 'w-full mt-6 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800 transition flex items-center justify-center gap-2';
+            } else {
+                btn.disabled = true; btn.innerHTML = 'Hết sách';
+                btn.className = 'w-full mt-6 py-3 bg-slate-200 text-slate-400 rounded-xl font-bold cursor-not-allowed flex items-center justify-center gap-2';
+            }
+
+            const m = document.getElementById('book-detail-modal');
+            m.classList.remove('hidden');
+            setTimeout(()=>{
+                document.getElementById('book-detail-backdrop').classList.remove('opacity-0');
+                const c = document.getElementById('book-detail-content');
+                c.classList.remove('opacity-0','translate-y-full','scale-95');
+                c.classList.add('md:translate-y-0','md:scale-100');
+            },10);
+        }
+        function closeBookDetail() {
+             const m = document.getElementById('book-detail-modal');
+             const c = document.getElementById('book-detail-content');
+             document.getElementById('book-detail-backdrop').classList.add('opacity-0');
+             c.classList.add('opacity-0','translate-y-full','scale-95');
+             c.classList.remove('md:translate-y-0','md:scale-100');
+             setTimeout(()=>m.classList.add('hidden'),300);
+        }
+
+        // CART FUNCTIONS
+        async function loadCart() { const res = await fetch('/api/cart'); renderCart(await res.json()); }
+        function renderCart(items) {
+            document.getElementById('cart-total-qty').innerText = items.length;
+            const badge = document.getElementById('cart-badge'); badge.innerText = items.length;
+            if(items.length>0) badge.classList.remove('hidden','scale-0'); else { badge.classList.add('scale-0'); setTimeout(()=>badge.classList.add('hidden'),300); }
+            const container = document.getElementById('cart-items-container');
+            if(items.length===0) {
+                container.innerHTML = `<div class="text-center py-10 opacity-50"><i class="fas fa-shopping-basket text-4xl text-slate-300 mb-3"></i><p class="text-slate-500">Giỏ trống</p></div>`;
+                document.getElementById('btn-checkout').disabled = true; document.getElementById('btn-checkout').classList.add('opacity-50','cursor-not-allowed');
+            } else {
+                document.getElementById('btn-checkout').disabled = false; document.getElementById('btn-checkout').classList.remove('opacity-50','cursor-not-allowed');
+                container.innerHTML = items.map(item => `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex gap-4 relative group">
+                        <div class="w-12 h-16 bg-slate-100 rounded flex items-center justify-center text-slate-300 flex-shrink-0"><i class="fas fa-book"></i></div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-slate-800 line-clamp-1 text-sm">${item.title}</h4>
+                            <p class="text-xs text-slate-500">${item.author}</p>
+                        </div>
+                        <button onclick="removeFromCart('${item.isbn}')" class="absolute top-2 right-2 w-8 h-8 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 flex items-center justify-center transition"><i class="fas fa-trash-alt text-xs"></i></button>
+                    </div>`).join('');
+            }
+        }
+        async function quickAddToCart(isbn, title, author) {
+            const res = await fetch('/api/cart/add', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isbn, title, author})});
+            const d = await res.json();
+            if(d.status === 'success') { showToast('Đã thêm vào giỏ!', 'success'); loadCart(); } else showToast(d.message, 'error');
+        }
+        async function addToCartFromModal() { if(currentIsbn && currentBookData) { await quickAddToCart(currentIsbn, currentBookData.title, currentBookData.author); closeBookDetail(); } }
+        async function removeFromCart(isbn) { await fetch('/api/cart/remove', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({isbn})}); loadCart(); }
+        async function confirmBorrow() {
+            if(!confirm('Xác nhận đăng ký mượn các sách trong giỏ?')) return;
+            const res = await fetch('/api/user/checkout-db', {method:'POST'});
+            const d = await res.json();
+            if(d.status === 'success') { showToast(d.message, 'success'); loadCart(); toggleCart(); loadBooks(); } else showToast(d.message, 'error');
+        }
+        function toggleCart() {
+            const d = document.getElementById('cart-drawer'); const o = document.getElementById('cart-drawer-overlay');
+            if(d.classList.contains('translate-x-full')) { d.classList.remove('translate-x-full'); o.classList.remove('hidden'); setTimeout(()=>o.classList.remove('opacity-0'),10); }
+            else { d.classList.add('translate-x-full'); o.classList.add('opacity-0'); setTimeout(()=>o.classList.add('hidden'),300); }
+        }
+        function showToast(msg, type='success') {
+            const c = document.getElementById('toast-container'); const t = document.createElement('div'); const bg = type==='success'?'bg-emerald-500':'bg-red-500';
+            t.className = `${bg} text-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-3 transform transition-all duration-300 translate-x-full min-w-[300px] backdrop-blur-sm bg-opacity-90`;
+            t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'} text-lg"></i><span class="font-medium">${msg}</span>`;
+            c.appendChild(t); requestAnimationFrame(()=>t.classList.remove('translate-x-full')); setTimeout(()=>{ t.classList.add('translate-x-full','opacity-0'); setTimeout(()=>t.remove(),300); },3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Độc giả - LibAdmin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a' } } } } }
+    </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-book-open text-sm"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin</span>
+        </div>
+
+        <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
+            <div>
+                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
+                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
+            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
+            </a>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
+            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+            </a>
+            <a href="/admin/users" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+            </a>
+            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+            </a>
+             <a href="/admin/fines" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700/50">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-users text-indigo-600 mr-2"></i> Danh sách Độc giả</h2>
+            <button onclick="toggleModal('user-modal', true)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Thêm độc giả
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
+                        <tr>
+                            <th class="p-4 pl-6">Thông tin</th>
+                            <th class="p-4">Liên hệ</th>
+                            <th class="p-4 text-center">Sách mượn</th>
+                            <th class="p-4 text-center">Nợ phạt</th>
+                            <th class="p-4 text-right pr-6">Tác vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="user-modal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform transition-all scale-100">
+            <h3 class="text-xl font-bold mb-4 text-slate-800">Thêm Độc giả mới</h3>
+            <form onsubmit="handleAddUser(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mã sinh viên</label>
+                    <input type="text" name="msv" required class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Họ và tên</label>
+                    <input type="text" name="fullname" required class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                    <input type="email" name="email" required class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Số điện thoại</label>
+                    <input type="text" name="phone" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="toggleModal('user-modal', false)" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg transition">Hủy</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleModal('detail-modal', false)"></div>
+        <div class="absolute inset-4 md:inset-10 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in pointer-events-auto">
+            <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-white to-slate-50 flex justify-between items-start">
+                <div class="flex items-center gap-5">
+                    <div class="relative">
+                        <img src="" id="d-avatar" class="w-20 h-20 rounded-full bg-white border-4 border-white shadow-md">
+                        <span class="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            <span id="d-name">...</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-bold border border-indigo-200">Sinh viên</span>
+                        </h2>
+                        <div class="flex gap-4 mt-1 text-sm text-slate-500">
+                            <span class="font-mono"><i class="far fa-id-card mr-1"></i> <span id="d-msv">...</span></span>
+                            <span><i class="far fa-envelope mr-1"></i> <span id="d-email">...</span></span>
+                        </div>
+                        <div class="mt-3 flex gap-3 text-sm">
+                            <div class="flex items-center gap-1.5 text-slate-600 font-bold bg-slate-100 px-3 py-1 rounded-full">
+                                <i class="fas fa-book-reader text-indigo-500"></i> <span id="d-borrow-count">0/5</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 text-slate-600 font-bold bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+                                <i class="fas fa-exclamation-circle text-rose-500"></i> <span id="d-fine">0đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="toggleModal('detail-modal', false)" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto bg-slate-50 p-6">
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50/50"><h3 class="font-bold text-slate-700"><i class="fas fa-history text-slate-400 mr-2"></i> Sách đang mượn</h3></div>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
+                            <tr><th class="p-4">Sách</th><th class="p-4">Thời gian</th><th class="p-4 text-center">Trạng thái</th></tr>
+                        </thead>
+                        <tbody id="d-loans-list" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    <div id="d-empty" class="p-8 text-center text-slate-400 italic hidden">Độc giả này chưa mượn sách nào.</div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-200 bg-white flex justify-end gap-3">
+                <button onclick="resetPassCurrent()" class="px-4 py-2 border border-slate-300 rounded-lg font-bold text-slate-600 hover:bg-slate-50"><i class="fas fa-key mr-2"></i> Reset Mật khẩu</button>
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow"><i class="fas fa-edit mr-2"></i> Sửa hồ sơ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+
+        document.addEventListener('DOMContentLoaded', loadUsers);
+
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+
+        function toggleModal(id, show) {
+            const el = document.getElementById(id);
+            if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
+        }
+
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users');
+            const users = await res.json();
+            document.getElementById('user-list').innerHTML = users.map(u => `
+                <tr class="hover:bg-slate-50 group cursor-pointer" onclick="openDetail('${u._id}', '${u.fullname}', '${u.msv}', '${u.email}', ${u.borrow_count}, ${u.total_fine})">
+                    <td class="p-4 pl-6">
+                        <div class="flex items-center gap-3">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${u.fullname}" class="w-10 h-10 rounded-full bg-slate-100">
+                            <div><p class="font-bold text-slate-800 group-hover:text-indigo-600 transition">${u.fullname}</p><p class="text-xs text-slate-500 font-mono">${u.msv}</p></div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-slate-600"><p>${u.email}</p><p class="text-xs">${u.phone||''}</p></td>
+                    <td class="p-4 text-center"><span class="font-bold ${u.borrow_count>=5?'text-red-500':'text-slate-700'}">${u.borrow_count}/5</span></td>
+                    <td class="p-4 text-center font-bold ${u.total_fine>0?'text-red-500':'text-slate-400'}">${u.total_fine.toLocaleString()}đ</td>
+                    <td class="p-4 text-right pr-6"><button onclick="event.stopPropagation(); resetPass('${u._id}')" class="text-slate-400 hover:text-indigo-600 p-2"><i class="fas fa-key"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function openDetail(id, name, msv, email, count, fine) {
+            currentUserId = id;
+            document.getElementById('d-name').innerText = name;
+            document.getElementById('d-msv').innerText = msv;
+            document.getElementById('d-email').innerText = email;
+            document.getElementById('d-borrow-count').innerText = count + '/5';
+            document.getElementById('d-fine').innerText = fine.toLocaleString() + 'đ';
+            document.getElementById('d-avatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+
+            // Load loans
+            const res = await fetch(`/api/admin/user-loans/${id}`);
+            const loans = await res.json();
+            const list = document.getElementById('d-loans-list');
+            const empty = document.getElementById('d-empty');
+
+            if(loans.length === 0) {
+                list.innerHTML = ''; empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                list.innerHTML = loans.map(l => `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-4 font-bold text-slate-700">${l.book_title}</td>
+                        <td class="p-4 text-slate-500 text-xs">
+                            <p>Mượn: ${l.borrow_date}</p>
+                            <p class="font-bold ${l.is_overdue?'text-red-500':'text-emerald-600'}">Hạn: ${l.due_date_fmt}</p>
+                        </td>
+                        <td class="p-4 text-center">
+                            ${l.is_overdue
+                                ? '<span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">Quá hạn</span>'
+                                : '<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold">Đang mượn</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            toggleModal('detail-modal', true);
+        }
+
+        async function handleAddUser(e) {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(e.target));
+            const res = await fetch('/api/admin/user', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(formData) });
+            const d = await res.json();
+            if(d.status === 'success') { alert(d.message); toggleModal('user-modal', false); loadUsers(); } else alert(d.message);
+        }
+
+        async function resetPass(id) { if(confirm('Reset mật khẩu về mặc định (123456)?')) { const r = await fetch(`/api/admin/user/${id}/reset-pass`, {method: 'POST'}); alert((await r.json()).message); } }
+        function resetPassCurrent() { if(currentUserId) resetPass(currentUserId); }
+    </script>
+</body>
+</html>

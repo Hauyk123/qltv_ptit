@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Sách - LibAdmin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a', 800: '#1e293b' } } } } }
+    </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        /* Ẩn input file mặc định */
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-book-open text-sm"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin</span>
+        </div>
+
+        <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
+            <div>
+                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
+                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
+            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
+            </a>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
+            <a href="/admin/books" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+            </a>
+            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+            </a>
+            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+            </a>
+             <a href="/admin/fines" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700/50">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-book text-indigo-600 mr-2"></i> Kho Sách</h2>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center mb-6">
+                <div class="flex gap-3 flex-1 max-w-lg">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="search-q" placeholder="Tìm kiếm sách..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <button onclick="loadBooks()" class="px-4 py-2.5 bg-slate-100 font-bold text-slate-600 rounded-xl hover:bg-slate-200">Tìm</button>
+                </div>
+                <button onclick="toggleModal(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Thêm sách mới
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
+                        <tr>
+                            <th class="p-4 pl-6">Thông tin sách</th>
+                            <th class="p-4">ISBN</th>
+                            <th class="p-4 text-center">Tồn kho</th>
+                            <th class="p-4 text-center">Trạng thái</th>
+                            <th class="p-4 text-right pr-6">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="book-list" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-add-book" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity duration-300">
+        <form id="book-form" onsubmit="handleSaveBook(event)" class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 rounded-t-2xl backdrop-blur-sm">
+                <div>
+                    <h3 class="font-bold text-xl text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-book-medical text-indigo-600"></i> Thêm đầu sách mới
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1">Nhập thông tin chi tiết đầu sách và số lượng nhập kho</p>
+                </div>
+                <button type="button" onclick="toggleModal(false)" class="w-9 h-9 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                <div class="flex flex-col lg:flex-row gap-8">
+
+                    <div class="w-full lg:w-1/3 flex flex-col">
+    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Ảnh bìa sách (URL)</label>
+
+    <div class="mb-2">
+        <input type="text" name="image_url" placeholder="Dán link ảnh vào đây..."
+               class="w-full p-2 border border-slate-300 rounded text-sm"
+               onchange="document.getElementById('preview-img').src = this.value || 'https://via.placeholder.com/300x450?text=No+Image'">
+    </div>
+
+    <div class="w-full aspect-[2/3] bg-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+        <img id="preview-img" src="https://via.placeholder.com/300x450?text=No+Image" class="w-full h-full object-cover">
+    </div>
+</div>
+
+                    <div class="flex-1 space-y-5">
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 items-end">
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-blue-600 uppercase mb-1">Mã ISBN (Quốc tế) <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="text" name="isbn" required placeholder="Nhập 10 hoặc 13 chữ số..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-blue-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition font-mono text-slate-700 shadow-sm">
+                                    <i class="fas fa-barcode absolute left-3 top-3 text-blue-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tên sách <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" required placeholder="VD: Clean Code - Mã sạch" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold text-slate-800">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tác giả <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <input type="text" name="author" required placeholder="VD: Robert C. Martin" class="w-full pl-9 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    <i class="fas fa-pen-nib absolute left-3 top-3.5 text-slate-400"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Thể loại</label>
+                                <select name="category" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition bg-white text-slate-700 cursor-pointer">
+                                    <option>CNTT</option>
+                                    <option>Kinh tế</option>
+                                    <option>Văn học</option>
+                                    <option>Kỹ năng</option>
+                                    <option>Giáo trình</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nhà xuất bản</label>
+                                <input type="text" name="publisher" placeholder="VD: NXB Trẻ" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Năm XB</label>
+                                <input type="number" name="year" value="2024" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition text-center">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Giá bìa (VNĐ)</label>
+                                <div class="relative">
+                                    <input type="number" name="price" placeholder="0" class="w-full pl-3 pr-10 p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition font-mono">
+                                    <span class="absolute right-3 top-3.5 text-slate-400 text-xs font-bold">VNĐ</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ngôn ngữ</label>
+                                <select name="language" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition bg-white">
+                                    <option>Tiếng Việt</option>
+                                    <option>Tiếng Anh</option>
+                                    <option>Khác</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-100 my-2"></div>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h4 class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"><i class="fas fa-cubes text-indigo-500"></i> Thông tin nhập kho</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Số lượng nhập</label>
+                                    <input type="number" name="qty" value="1" min="1" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-center font-bold text-indigo-900">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Vị trí kệ sách</label>
+                                    <input type="text" name="location" placeholder="VD: Kệ A1 - Tầng 2" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end gap-3">
+                <button type="button" onclick="toggleModal(false)" class="px-6 py-3 rounded-xl bg-white border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 transition shadow-sm">
+                    Hủy bỏ
+                </button>
+                <button type="submit" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition transform active:scale-[0.98] flex items-center gap-2">
+                    <i class="fas fa-save"></i> Lưu & Nhập kho
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadBooks);
+
+        // --- Modal & Image Logic ---
+        function toggleModal(show) {
+            const m = document.getElementById('modal-add-book');
+            if(show) {
+                m.classList.remove('hidden');
+                m.classList.add('flex');
+                document.getElementById('book-form').reset();
+                document.getElementById('book-cover-preview').classList.add('hidden');
+            } else {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('book-cover-preview');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- API Logic ---
+        async function loadBooks() {
+            const q = document.getElementById('search-q').value;
+            const res = await fetch(`/api/books?q=${q}`);
+            const books = await res.json();
+            document.getElementById('book-list').innerHTML = books.map(b => `
+                <tr class="hover:bg-slate-50/80 transition group">
+                    <td class="p-4 pl-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-14 bg-indigo-50 rounded flex-shrink-0 flex items-center justify-center text-indigo-300 overflow-hidden">
+                                ${b.image_url ? `<img src="${b.image_url}" class="w-full h-full object-cover">` : '<i class="fas fa-book"></i>'}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-base line-clamp-1">${b.title}</p>
+                                <p class="text-xs text-slate-500">${b.author}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-slate-600 font-mono">${b.isbn}</td>
+                    <td class="p-4 text-center"><span class="font-bold text-slate-800">${b.qty_avail}</span> <span class="text-slate-400 text-xs">/ ${b.qty_total}</span></td>
+                    <td class="p-4 text-center">
+                        ${b.qty_avail > 0 ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Đang lưu hành</span>' : '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">Hết sách</span>'}
+                    </td>
+                    <td class="p-4 text-right pr-6">
+                        <a href="/admin/book/${b.isbn}" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded transition mr-1"><i class="fas fa-eye"></i></a>
+                        <button onclick="deleteBook('${b.isbn}')" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded transition"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function handleSaveBook(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            // Convert FormData to JSON (Lưu ý: chưa xử lý upload file ảnh trong bản demo này)
+            const data = Object.fromEntries(formData.entries());
+            data.qty = parseInt(data.qty);
+
+            // Xóa trường image (file object) vì API JSON hiện tại không nhận file
+            delete data.image;
+
+            const res = await fetch('/api/admin/book', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if(result.status === 'success') {
+                alert('Thành công!');
+                toggleModal(false);
+                loadBooks();
+            } else alert(result.message);
+        }
+
+        async function deleteBook(isbn) { if(!confirm('Xóa sách này?')) return; const res = await fetch(`/api/admin/book/${isbn}`, { method: 'DELETE' }); const data = await res.json(); if(data.status === 'success') loadBooks(); else alert(data.message); }
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+    </script>
+</body>
+</html>
