@@ -390,49 +390,7 @@ def admin_borrow():
 
     return jsonify({'status': 'success', 'message': f'Đã mượn thành công {success_count} cuốn sách!'})
 
-# 4. API Trả Sách (Xử lý từng cuốn)
-@app.route('/api/admin/return', methods=['POST'])
-def admin_return():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
-    barcode = request.json.get('barcode')
 
-    trans = db.transactions.find_one({'barcode': barcode, 'status': 'borrowing'})
-    if not trans:
-        return jsonify({'status': 'error', 'message': 'Sách này không ở trạng thái đang mượn!'}), 400
-
-    # Tính phạt
-    overdue_days = 0
-    fine_amount = 0
-    if datetime.now() > trans['due_date']:
-        delta = datetime.now() - trans['due_date']
-        overdue_days = delta.days
-        fine_amount = overdue_days * 1000  # 1000đ/ngày
-
-    # Update Transaction
-    update_data = {
-        'status': 'returned',
-        'return_date': datetime.now(),
-        'fine': fine_amount,
-        'overdue_days': overdue_days
-    }
-
-    # Nếu có phạt thì đánh dấu là Chưa trả tiền
-    if fine_amount > 0:
-        update_data['fine_paid'] = False
-
-    db.transactions.update_one({'_id': trans['_id']}, {'$set': update_data})
-
-    # Update Kho sách
-    db.book_copies.update_one({'barcode': barcode}, {'$set': {'status': 'available'}})
-    copy = db.book_copies.find_one({'barcode': barcode})
-    db.books.update_one({'isbn': copy['isbn_ref']}, {'$inc': {'qty_avail': 1}})
-
-    return jsonify({
-        'status': 'success',
-        'message': 'Trả sách thành công!',
-        'fine': fine_amount,
-        'overdue': overdue_days
-    })
 # 5. API Lấy sách đang mượn của User (Để Gia hạn)
 @app.route('/api/admin/user-loans/<uid>', methods=['GET'])
 def get_user_loans(uid):
@@ -507,16 +465,35 @@ def borrow_book():
 
 
 # --- API THỐNG KÊ (ADMIN) ---
+# --- Cập nhật API Thống kê tổng quan (Dashboard Cards) ---
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+
+    # 1. Tính tổng doanh thu thực tế từ bảng 'fines'
+    # Chỉ tính những phiếu có status = 'paid'
+    pipeline = [
+        {'$match': {'status': 'paid'}},
+        {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+    ]
+    result = list(db.fines.aggregate(pipeline))
+
+    # Nếu có dữ liệu thì lấy tổng, nếu không thì bằng 0
+    total_revenue = result[0]['total'] if result else 0
+
+    # Format số tiền cho đẹp (VD: 100000 -> "100.000")
+    revenue_formatted = "{:,.0f}".format(total_revenue).replace(",", ".")
+
     return jsonify({
         'total_books': db.books.count_documents({}),
         'borrowing': db.transactions.count_documents({'status': 'borrowing'}),
-        'overdue': db.transactions.count_documents({'status': 'borrowing', 'due_date': {'$lt': datetime.now()}}),
-        'revenue': '2.500.000'
+        # Đếm số sách đang mượn mà ngày hiện tại > ngày hết hạn
+        'overdue': db.transactions.count_documents({
+            'status': 'borrowing',
+            'due_date': {'$lt': datetime.now()}
+        }),
+        'revenue': revenue_formatted
     })
-
-
 # --- API GIỎ HÀNG (DATABASE) ---
 
 @app.route('/api/cart', methods=['GET'])
@@ -701,63 +678,253 @@ def admin_fines():
     return render_template('admin_fines.html')
 
 
-# --- API QUẢN LÝ PHẠT ---
+# --- Cập nhật API lấy dữ liệu Biểu đồ (Sử dụng số liệu thật) ---
+@app.route('/api/admin/chart-data', methods=['GET'])
+def get_chart_data():
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+
+    # 1. BIỂU ĐỒ TRÒN (PIE): Tình trạng sách
+    # Đếm số lượng thực tế từ DB
+    total_copies = db.book_copies.count_documents({})
+    # Những cuốn không phải 'available' tức là đang mượn hoặc chờ xử lý
+    borrowed = db.book_copies.count_documents({'status': {'$ne': 'available'}})
+    available = total_copies - borrowed
+
+    # 2. BIỂU ĐỒ CỘT (BAR): Doanh thu 6 tháng gần nhất
+    bar_labels = []
+    bar_data = []
+
+    today = datetime.now()
+
+    # Vòng lặp lấy 6 tháng gần nhất (từ tháng hiện tại lùi về 5 tháng trước)
+    for i in range(5, -1, -1):
+        # Tính tháng cần query
+        # Lưu ý: Cách tính này tương đối, để chính xác tuyệt đối cần dùng thư viện dateutil
+        # nhưng ở đây dùng logic đơn giản để không cần cài thêm thư viện.
+        date_cursor = today.replace(day=1)
+
+        # Lùi lại i tháng (Logic xử lý năm)
+        target_month = date_cursor.month - i
+        target_year = date_cursor.year
+        if target_month <= 0:
+            target_month += 12
+            target_year -= 1
+
+        # Tạo label hiển thị (VD: 12/2024)
+        label = f"{target_month:02d}/{target_year}"
+        bar_labels.append(label)
+
+        # Xác định ngày đầu tháng và ngày đầu tháng sau (để kẹp khoảng thời gian)
+        start_date = datetime(target_year, target_month, 1)
+        if target_month == 12:
+            end_date = datetime(target_year + 1, 1, 1)
+        else:
+            end_date = datetime(target_year, target_month + 1, 1)
+
+        # Query Aggregation: Tính tổng tiền phạt (status='paid') trong khoảng thời gian này
+        # Dùng bảng 'fines' (đã tạo ở bước trước)
+        pipeline = [
+            {
+                '$match': {
+                    'status': 'paid',
+                    'payment_date': {'$gte': start_date, '$lt': end_date}
+                }
+            },
+            {
+                '$group': {
+                    '_id': None,
+                    'total_revenue': {'$sum': '$amount'}
+                }
+            }
+        ]
+
+        result = list(db.fines.aggregate(pipeline))
+
+        # Nếu có kết quả thì lấy, không thì bằng 0
+        monthly_total = result[0]['total_revenue'] if result else 0
+        bar_data.append(monthly_total)
+
+    return jsonify({
+        'pie_data': [available, borrowed],
+        'bar_labels': bar_labels,
+        'bar_data': bar_data
+    })
+# --- API QUẢN LÝ BẢN LƯU (COPY) TRONG CHI TIẾT SÁCH ---
+
+@app.route('/api/admin/book/add-copy', methods=['POST'])
+def add_book_copy():
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+
+    data = request.json
+    isbn = data.get('isbn')
+    qty_to_add = int(data.get('qty', 1))  # Số lượng cần thêm
+    location = data.get('location', 'Kho chung')
+
+    book = db.books.find_one({'isbn': isbn})
+    if not book: return jsonify({'status': 'error', 'message': 'Không tìm thấy sách!'}), 404
+
+    # Tính toán mã vạch tiếp theo (Dựa trên số lượng hiện có để tránh trùng)
+    # Ví dụ: Đang có 978-1-5 -> Cái tiếp theo là 978-1-6
+    current_count = db.book_copies.count_documents({'isbn_ref': isbn})
+
+    new_copies = []
+    for i in range(qty_to_add):
+        current_count += 1
+        new_copies.append({
+            'isbn_ref': isbn,
+            'barcode': f"{isbn}-{current_count}",
+            'status': 'available',
+            'location': location
+        })
+
+    if new_copies:
+        db.book_copies.insert_many(new_copies)
+        # Cập nhật lại tổng số lượng và khả dụng trong bảng books
+        db.books.update_one({'isbn': isbn}, {
+            '$inc': {'qty_total': qty_to_add, 'qty_avail': qty_to_add}
+        })
+
+    return jsonify({'status': 'success', 'message': f'Đã thêm {qty_to_add} bản lưu mới!'})
+
+
+@app.route('/api/admin/book/copy/<barcode>', methods=['DELETE'])
+def delete_book_copy(barcode):
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+
+    # Kiểm tra trạng thái sách
+    copy = db.book_copies.find_one({'barcode': barcode})
+    if not copy: return jsonify({'status': 'error', 'message': 'Không tìm thấy bản lưu này!'}), 404
+
+    if copy['status'] != 'available':
+        return jsonify({'status': 'error', 'message': 'Không thể xóa: Sách này đang được mượn hoặc chờ xử lý!'}), 400
+
+    # Xóa bản lưu
+    db.book_copies.delete_one({'_id': copy['_id']})
+
+    # Cập nhật giảm số lượng trong bảng books
+    db.books.update_one({'isbn': copy['isbn_ref']}, {
+        '$inc': {'qty_total': -1, 'qty_avail': -1}
+    })
+
+    return jsonify({'status': 'success', 'message': 'Đã xóa bản lưu thành công!'})
+
+
+# --- LOGIC QUẢN LÝ PHẠT (NÂNG CẤP) ---
+
 @app.route('/api/admin/fines', methods=['GET'])
 def get_fines_list():
     if session.get('role') != 'admin': return jsonify([]), 403
 
-    # Lấy các giao dịch có tiền phạt > 0
-    # Sắp xếp: Chưa trả tiền lên trước
-    fines = list(db.transactions.find({'fine': {'$gt': 0}}).sort([('fine_paid', 1), ('return_date', -1)]))
+    # Lấy danh sách từ collection 'fines'
+    # Sắp xếp: Chưa thanh toán lên đầu, sau đó đến ngày tạo mới nhất
+    fines = list(db.fines.find({}).sort([('status', 1), ('created_at', -1)]))
 
     result = []
     for f in fines:
-        # Lấy thông tin user để hiển thị tên
-        user = db.users.find_one({'_id': ObjectId(f['user_id'])})
-        result.append({
-            'id': str(f['_id']),
-            'user_name': user['fullname'] if user else 'Unknown',
-            'user_msv': user['msv'] if user else '---',
-            'book_title': f['book_title'],
-            'fine': f['fine'],
-            'reason': f"Quá hạn {f.get('overdue_days', 0)} ngày",
-            'date': f['return_date'].strftime('%d/%m/%Y'),
-            'paid': f.get('fine_paid', True)  # Nếu không có field này coi như đã trả (dữ liệu cũ)
-        })
+        f['_id'] = str(f['_id'])
+        f['created_at'] = f['created_at'].strftime('%d/%m/%Y')
+        # Format trạng thái
+        f['is_paid'] = (f.get('status') == 'paid')
+        result.append(f)
+
     return jsonify(result)
+
+
+@app.route('/api/admin/fine/create', methods=['POST'])
+def create_manual_fine():
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    data = request.json
+
+    user_id = data.get('user_id')
+    amount = int(data.get('amount', 0))
+    reason = data.get('reason')  # 'damaged', 'lost', 'other'
+    note = data.get('note', '')
+
+    if not user_id or amount <= 0:
+        return jsonify({'status': 'error', 'message': 'Dữ liệu không hợp lệ!'}), 400
+
+    user = db.users.find_one({'_id': ObjectId(user_id)})
+    if not user: return jsonify({'status': 'error', 'message': 'Không tìm thấy độc giả!'}), 404
+
+    # Tạo phiếu phạt
+    new_fine = {
+        'user_id': user_id,
+        'user_name': user['fullname'],
+        'user_msv': user['msv'],
+        'amount': amount,
+        'reason': reason,  # 'damaged', 'lost', 'manual'
+        'description': note,
+        'status': 'unpaid',  # unpaid / paid
+        'created_at': datetime.now()
+    }
+
+    db.fines.insert_one(new_fine)
+    return jsonify({'status': 'success', 'message': 'Đã lập phiếu phạt thành công!'})
 
 
 @app.route('/api/admin/pay-fine', methods=['POST'])
 def pay_fine():
     if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
-    trans_id = request.json.get('id')
+    fine_id = request.json.get('id')
 
-    db.transactions.update_one({'_id': ObjectId(trans_id)}, {
-        '$set': {'fine_paid': True, 'payment_date': datetime.now()}
+    db.fines.update_one({'_id': ObjectId(fine_id)}, {
+        '$set': {'status': 'paid', 'payment_date': datetime.now()}
     })
-    return jsonify({'status': 'success', 'message': 'Đã xác nhận thu tiền!'})
+    return jsonify({'status': 'success', 'message': 'Đã thu tiền thành công!'})
 
 
-# --- API BIỂU ĐỒ DASHBOARD ---
-@app.route('/api/admin/chart-data', methods=['GET'])
-def get_chart_data():
-    # 1. Thống kê tình trạng sách
-    total_books = db.book_copies.count_documents({})
-    borrowed = db.book_copies.count_documents({'status': 'borrowed'})
-    available = total_books - borrowed
+# --- CẬP NHẬT LẠI HÀM TRẢ SÁCH (admin_return) ĐỂ TỰ ĐỘNG TẠO PHẠT ---
+# Tìm hàm admin_return cũ và thay thế bằng hàm này
+@app.route('/api/admin/return', methods=['POST'])
+def admin_return():
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    barcode = request.json.get('barcode')
 
-    # 2. Thống kê doanh thu phạt (Giả lập theo 6 tháng gần nhất)
-    # Trong thực tế bạn sẽ query aggregate từ DB
-    revenue_data = [0, 0, 0, 0, 0, 0]  # Placeholder
-    months = []
-    for i in range(5, -1, -1):
-        month = (datetime.now() - timedelta(days=30 * i)).strftime('%m/%Y')
-        months.append(month)
+    trans = db.transactions.find_one({'barcode': barcode, 'status': 'borrowing'})
+    if not trans:
+        return jsonify({'status': 'error', 'message': 'Sách này không ở trạng thái đang mượn!'}), 400
+
+    # Tính phạt quá hạn
+    overdue_days = 0
+    fine_amount = 0
+    if datetime.now() > trans['due_date']:
+        delta = datetime.now() - trans['due_date']
+        overdue_days = delta.days
+        fine_amount = overdue_days * 1000  # 1000đ/ngày
+
+    # Update Transaction
+    update_data = {
+        'status': 'returned',
+        'return_date': datetime.now(),
+        'fine': fine_amount,
+        'overdue_days': overdue_days
+    }
+    db.transactions.update_one({'_id': trans['_id']}, {'$set': update_data})
+
+    # Update Kho sách
+    db.book_copies.update_one({'barcode': barcode}, {'$set': {'status': 'available'}})
+    copy = db.book_copies.find_one({'barcode': barcode})
+    db.books.update_one({'isbn': copy['isbn_ref']}, {'$inc': {'qty_avail': 1}})
+
+    # === LOGIC MỚI: TẠO PHIẾU PHẠT TỰ ĐỘNG ===
+    if fine_amount > 0:
+        user = db.users.find_one({'_id': ObjectId(trans['user_id'])})
+        db.fines.insert_one({
+            'user_id': trans['user_id'],
+            'user_name': user['fullname'],
+            'user_msv': user['msv'],
+            'amount': fine_amount,
+            'reason': 'overdue',
+            'description': f"Quá hạn {overdue_days} ngày - Sách: {trans['book_title']}",
+            'status': 'unpaid',
+            'created_at': datetime.now()
+        })
 
     return jsonify({
-        'pie_data': [available, borrowed],
-        'bar_labels': months,
-        'bar_data': [50000, 150000, 80000, 200000, 120000, 300000]  # Số liệu giả lập để demo biểu đồ
+        'status': 'success',
+        'message': 'Trả sách thành công!',
+        'fine': fine_amount,
+        'overdue': overdue_days
     })
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

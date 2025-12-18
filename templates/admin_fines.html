@@ -9,86 +9,217 @@
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a' } } } } }
     </script>
-    <style>
-        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
     <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20">
         <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
-            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
-                <i class="fas fa-book-open text-sm"></i>
-            </div>
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg"><i class="fas fa-book-open text-sm"></i></div>
             <span class="text-white font-bold text-lg tracking-tight">LibAdmin</span>
         </div>
-
         <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
-            <div>
-                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
-                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
-            </div>
+            <div><p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p><p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p></div>
         </div>
-
         <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
-            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
-            </a>
-
+            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-chart-pie w-5"></i> Dashboard</a>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
-            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
-            </a>
-            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
-            </a>
-            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
-            </a>
-             <a href="/admin/fines" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
-            </a>
+            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-book w-5"></i> Quản lý Sách</a>
+            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-users w-5"></i> Quản lý Độc giả</a>
+            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-sync-alt w-5"></i> Mượn - Trả Sách</a>
+             <a href="/admin/fines" class="nav-item bg-slate-800 text-white flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-file-invoice-dollar w-5"></i> Thu Phạt</a>
         </nav>
-
-        <div class="p-4 border-t border-slate-700/50">
-            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
-                <i class="fas fa-sign-out-alt"></i> Đăng xuất
-            </button>
-        </div>
+        <div class="p-4 border-t border-slate-700/50"><button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></div>
     </aside>
 
-    <main class="flex-1 p-8 overflow-y-auto">
-        <h2 class="text-2xl font-bold text-slate-800 mb-6">Danh sách Phiếu phạt</h2>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden border">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
-                    <tr><th class="p-4">Độc giả</th><th class="p-4">Lý do / Sách</th><th class="p-4 text-right">Số tiền</th><th class="p-4 text-center">Trạng thái</th><th class="p-4 text-right">Tác vụ</th></tr>
-                </thead>
-                <tbody id="fine-list" class="divide-y divide-slate-100 text-sm"></tbody>
-            </table>
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-file-invoice-dollar text-indigo-600 mr-2"></i> Danh sách Phiếu phạt</h2>
+            <button onclick="toggleModal('fine-modal', true)" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-rose-500/30 transition flex items-center gap-2">
+                <i class="fas fa-plus"></i> Lập phiếu phạt
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs border-b border-slate-100">
+                        <tr><th class="p-4">Độc giả</th><th class="p-4">Lý do phạt</th><th class="p-4 text-right">Số tiền</th><th class="p-4">Ngày tạo</th><th class="p-4 text-center">Trạng thái</th><th class="p-4 text-right">Tác vụ</th></tr>
+                    </thead>
+                    <tbody id="fine-list" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
         </div>
     </main>
+
+    <div id="fine-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Lập Phiếu Phạt Mới</h3>
+                <button onclick="toggleModal('fine-modal', false)" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="p-6 overflow-y-auto">
+                <div class="mb-6 relative">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">1. Tìm Độc giả (Tên hoặc MSV)</label>
+                    <input type="text" id="user-search" onkeyup="searchUser(this.value)" placeholder="Nhập từ khóa tìm kiếm..." class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div id="user-results" class="absolute w-full bg-white shadow-xl border border-slate-100 rounded-xl mt-1 max-h-40 overflow-y-auto hidden z-10"></div>
+                </div>
+
+                <div id="selected-user-box" class="hidden mb-6 bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-600 border"><i class="fas fa-user"></i></div>
+                    <div class="flex-1">
+                        <p class="font-bold text-indigo-900" id="u-name">...</p>
+                        <p class="text-xs text-indigo-500" id="u-msv">...</p>
+                    </div>
+                    <button onclick="deselectUser()" class="text-indigo-400 hover:text-indigo-600"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div id="fine-form-content" class="space-y-4 opacity-50 pointer-events-none transition">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">2. Lý do phạt</label>
+                        <select id="f-reason" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option value="damaged">Sách bị hỏng / Rách</option>
+                            <option value="lost">Làm mất sách</option>
+                            <option value="other">Vi phạm khác (Ồn ào, mất thẻ...)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Số tiền phạt (VNĐ)</label>
+                        <input type="number" id="f-amount" placeholder="VD: 50000" class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Ghi chú chi tiết</label>
+                        <textarea id="f-note" rows="2" placeholder="VD: Hỏng bìa sách Clean Code..." class="w-full p-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button onclick="toggleModal('fine-modal', false)" class="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg">Hủy</button>
+                <button onclick="createFine()" id="btn-create" disabled class="px-6 py-2 bg-slate-300 text-white font-bold rounded-lg transition cursor-not-allowed">Tạo phiếu</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let selectedUserId = null;
+
         loadFines();
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+
+        function toggleModal(id, show) {
+            const el = document.getElementById(id);
+            if(show) { el.classList.remove('hidden'); resetForm(); }
+            else el.classList.add('hidden');
+        }
+
         async function loadFines() {
             const res = await fetch('/api/admin/fines');
             const fines = await res.json();
-            document.getElementById('fine-list').innerHTML = fines.map(f => `
+            document.getElementById('fine-list').innerHTML = fines.map(f => {
+                let reasonBadge = '';
+                if(f.reason === 'overdue') reasonBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-bold">Quá hạn</span>';
+                else if(f.reason === 'damaged') reasonBadge = '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">Sách hỏng</span>';
+                else if(f.reason === 'lost') reasonBadge = '<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-bold">Mất sách</span>';
+                else reasonBadge = '<span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">Khác</span>';
+
+                return `
                 <tr class="hover:bg-slate-50">
-                    <td class="p-4"><p class="font-bold text-slate-800">${f.user_name}</p><p class="text-xs text-slate-500">${f.user_msv}</p></td>
-                    <td class="p-4"><p class="font-bold text-red-500">${f.reason}</p><p class="text-xs text-slate-500 italic">${f.book_title}</p></td>
-                    <td class="p-4 text-right font-bold text-lg">${f.fine.toLocaleString()}đ</td>
-                    <td class="p-4 text-center">${f.paid ? '<span class="text-green-600 font-bold">Đã TT</span>' : '<span class="text-red-500 font-bold">Chưa TT</span>'}</td>
-                    <td class="p-4 text-right">${!f.paid ? `<button onclick="payFine('${f.id}')" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-indigo-700">Thu tiền</button>` : '<i class="fas fa-check text-green-500"></i>'}</td>
-                </tr>
-            `).join('');
+                    <td class="p-4"><p class="font-bold text-slate-800">${f.user_name}</p><p class="text-xs text-slate-500 font-mono">${f.user_msv}</p></td>
+                    <td class="p-4">
+                        ${reasonBadge}
+                        <p class="text-xs text-slate-500 mt-1 italic line-clamp-1" title="${f.description}">${f.description}</p>
+                    </td>
+                    <td class="p-4 text-right font-bold text-slate-800">${f.amount.toLocaleString()}đ</td>
+                    <td class="p-4 text-slate-500 text-xs">${f.created_at}</td>
+                    <td class="p-4 text-center">${f.is_paid ? '<span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded">Đã TT</span>' : '<span class="text-rose-500 font-bold bg-rose-50 px-2 py-1 rounded">Chưa TT</span>'}</td>
+                    <td class="p-4 text-right">${!f.is_paid ? `<button onclick="payFine('${f._id}')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow shadow-indigo-500/30">Thu tiền</button>` : '<i class="fas fa-check-circle text-emerald-500 text-lg"></i>'}</td>
+                </tr>`;
+            }).join('');
         }
-        async function payFine(id) { if(confirm('Xác nhận thu tiền?')) { await fetch('/api/admin/pay-fine', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})}); loadFines(); } }
-        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+
+        // Logic Tìm kiếm User
+        async function searchUser(keyword) {
+            if(keyword.length < 2) { document.getElementById('user-results').classList.add('hidden'); return; }
+            const res = await fetch(`/api/admin/find-user?q=${keyword}`);
+            const users = await res.json();
+            const box = document.getElementById('user-results');
+            if(users.length > 0) {
+                box.innerHTML = users.map(u => `
+                    <div onclick="selectUser('${u._id}', '${u.fullname}', '${u.msv}')" class="p-3 hover:bg-indigo-50 cursor-pointer border-b last:border-0 transition">
+                        <p class="font-bold text-sm text-slate-700">${u.fullname}</p>
+                        <p class="text-xs text-slate-500">${u.msv}</p>
+                    </div>`).join('');
+                box.classList.remove('hidden');
+            } else {
+                box.innerHTML = '<div class="p-3 text-xs text-slate-400 italic text-center">Không tìm thấy</div>';
+                box.classList.remove('hidden');
+            }
+        }
+
+        function selectUser(id, name, msv) {
+            selectedUserId = id;
+            document.getElementById('u-name').innerText = name;
+            document.getElementById('u-msv').innerText = msv;
+            document.getElementById('user-results').classList.add('hidden');
+            document.getElementById('selected-user-box').classList.remove('hidden');
+            document.getElementById('user-search').parentElement.classList.add('hidden');
+
+            // Enable Form
+            const form = document.getElementById('fine-form-content');
+            form.classList.remove('opacity-50', 'pointer-events-none');
+            const btn = document.getElementById('btn-create');
+            btn.disabled = false;
+            btn.classList.remove('bg-slate-300', 'cursor-not-allowed');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+        }
+
+        function deselectUser() {
+            selectedUserId = null;
+            document.getElementById('selected-user-box').classList.add('hidden');
+            document.getElementById('user-search').parentElement.classList.remove('hidden');
+            document.getElementById('user-search').value = '';
+
+            // Disable Form
+            const form = document.getElementById('fine-form-content');
+            form.classList.add('opacity-50', 'pointer-events-none');
+            const btn = document.getElementById('btn-create');
+            btn.disabled = true;
+            btn.classList.add('bg-slate-300', 'cursor-not-allowed');
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+        }
+
+        function resetForm() {
+            deselectUser();
+            document.getElementById('f-reason').value = 'damaged';
+            document.getElementById('f-amount').value = '';
+            document.getElementById('f-note').value = '';
+        }
+
+        async function createFine() {
+            const amount = document.getElementById('f-amount').value;
+            const reason = document.getElementById('f-reason').value;
+            const note = document.getElementById('f-note').value;
+
+            if(!selectedUserId || !amount) return alert('Vui lòng nhập đầy đủ thông tin!');
+
+            const res = await fetch('/api/admin/fine/create', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: selectedUserId, amount: amount, reason: reason, note: note })
+            });
+            const data = await res.json();
+            if(data.status === 'success') {
+                alert('Tạo phiếu phạt thành công!');
+                toggleModal('fine-modal', false);
+                loadFines();
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function payFine(id) { if(confirm('Xác nhận đã thu tiền?')) { await fetch('/api/admin/pay-fine', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})}); loadFines(); } }
     </script>
 </body>
 </html>

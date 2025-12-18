@@ -54,12 +54,24 @@
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-800 text-lg">Danh sách các cuốn trong kho</h3>
-                    <span class="text-xs font-bold text-slate-500 bg-slate-200 px-2 py-1 rounded">Vị trí kệ: <span id="d-loc" class="text-slate-800">...</span></span>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg">Danh sách các cuốn trong kho</h3>
+                        <p class="text-xs text-slate-400 mt-1">Quản lý từng bản lưu (Barcode)</p>
+                    </div>
+
+                    <button onclick="addCopies()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow hover:bg-indigo-700 transition flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Nhập thêm sách
+                    </button>
                 </div>
+
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
-                        <tr><th class="p-4 pl-6">Mã vạch</th><th class="p-4">Trạng thái</th><th class="p-4">Vị trí</th></tr>
+                        <tr>
+                            <th class="p-4 pl-6">Mã vạch</th>
+                            <th class="p-4">Trạng thái</th>
+                            <th class="p-4">Vị trí</th>
+                            <th class="p-4 text-right pr-6">Tác vụ</th>
+                        </tr>
                     </thead>
                     <tbody id="copy-list" class="divide-y divide-slate-100"></tbody>
                 </table>
@@ -71,41 +83,103 @@
     <script>
         const isbn = window.location.pathname.split('/').pop();
         const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+        let currentBookLocation = '';
 
-        fetch(`/api/book/${isbn}`).then(r=>r.json()).then(d => {
-            if(d.status !== 'error'){
-                const b = d.book;
-                document.getElementById('d-title').innerText = b.title;
-                document.getElementById('d-author').innerText = b.author;
-                document.getElementById('d-cat').innerText = b.category;
-                document.getElementById('d-isbn').innerText = b.isbn;
+        // Hàm load dữ liệu
+        function loadData() {
+            fetch(`/api/book/${isbn}`).then(r=>r.json()).then(d => {
+                if(d.status !== 'error'){
+                    const b = d.book;
+                    currentBookLocation = b.location || 'Kho chung';
 
-                // New Fields
-                document.getElementById('d-img').src = b.image_url || '';
-                document.getElementById('d-pub').innerText = b.publisher || '---';
-                document.getElementById('d-year').innerText = b.year || '---';
-                document.getElementById('d-price').innerText = b.price ? formatter.format(b.price) : '0 ₫';
-                document.getElementById('d-lang').innerText = b.language || 'Tiếng Việt';
-                document.getElementById('d-loc').innerText = b.location || 'Chưa cập nhật';
+                    document.getElementById('d-title').innerText = b.title;
+                    document.getElementById('d-author').innerText = b.author;
+                    document.getElementById('d-cat').innerText = b.category;
+                    document.getElementById('d-isbn').innerText = b.isbn;
 
-                document.getElementById('d-total').innerText = b.qty_total;
-                document.getElementById('d-avail').innerText = b.qty_avail;
+                    document.getElementById('d-img').src = b.image_url || '';
+                    document.getElementById('d-pub').innerText = b.publisher || '---';
+                    document.getElementById('d-year').innerText = b.year || '---';
+                    document.getElementById('d-price').innerText = b.price ? formatter.format(b.price) : '0 ₫';
+                    document.getElementById('d-lang').innerText = b.language || 'Tiếng Việt';
 
-                // Status Badge
-                const badge = document.getElementById('d-status-badge');
-                if(b.qty_avail > 0) { badge.className='inline-block mt-1 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold'; badge.innerText='Đang lưu hành'; }
-                else { badge.className='inline-block mt-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold'; badge.innerText='Hết sách'; }
+                    document.getElementById('d-total').innerText = b.qty_total;
+                    document.getElementById('d-avail').innerText = b.qty_avail;
 
-                // Copies List
-                document.getElementById('copy-list').innerHTML = d.copies.map(c => `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-4 pl-6 font-mono font-bold text-slate-700">${c.barcode}</td>
-                        <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${c.status==='available' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">${c.status}</span></td>
-                        <td class="p-4 text-slate-500">${c.location || b.location || 'Kho chung'}</td>
-                    </tr>
-                `).join('');
+                    // Badge tổng quan
+                    const badge = document.getElementById('d-status-badge');
+                    if(b.qty_avail > 0) { badge.className='inline-block mt-1 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold'; badge.innerText='Đang lưu hành'; }
+                    else { badge.className='inline-block mt-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold'; badge.innerText='Hết sách'; }
+
+                    // Render danh sách copies
+                    document.getElementById('copy-list').innerHTML = d.copies.map(c => `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 pl-6 font-mono font-bold text-slate-700">${c.barcode}</td>
+                            <td class="p-4">
+                                ${c.status === 'available'
+                                    ? '<span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-green-100 text-green-700">AVAILABLE</span>'
+                                    : (c.status === 'borrowed'
+                                        ? '<span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-blue-100 text-blue-700">BORROWED</span>'
+                                        : '<span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-yellow-100 text-yellow-700">PENDING</span>')
+                                }
+                            </td>
+                            <td class="p-4 text-slate-500">${c.location || currentBookLocation}</td>
+                            <td class="p-4 text-right pr-6">
+                                <button onclick="deleteCopy('${c.barcode}', '${c.status}')"
+                                        class="p-2 rounded transition ${c.status === 'available' ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-slate-300 cursor-not-allowed'}"
+                                        title="Xóa bản lưu"
+                                        ${c.status !== 'available' ? 'disabled' : ''}>
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        // --- Logic Thêm Bản Lưu ---
+        async function addCopies() {
+            const qty = prompt("Nhập số lượng sách muốn thêm vào kho:", "1");
+            if (qty != null && parseInt(qty) > 0) {
+                const res = await fetch('/api/admin/book/add-copy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        isbn: isbn,
+                        qty: parseInt(qty),
+                        location: currentBookLocation
+                    })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    alert(data.message);
+                    loadData(); // Tải lại trang
+                } else {
+                    alert(data.message);
+                }
             }
-        });
+        }
+
+        // --- Logic Xóa Bản Lưu ---
+        async function deleteCopy(barcode, status) {
+            if(status !== 'available') {
+                alert('Không thể xóa sách đang được mượn!');
+                return;
+            }
+            if(confirm(`Bạn có chắc muốn xóa bản lưu có mã vạch ${barcode} không? hành động này sẽ giảm tổng số lượng sách.`)) {
+                const res = await fetch(`/api/admin/book/copy/${barcode}`, { method: 'DELETE' });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    // Xóa dòng đó khỏi bảng ngay lập tức hoặc load lại
+                    loadData();
+                } else {
+                    alert(data.message);
+                }
+            }
+        }
     </script>
 </body>
 </html>
