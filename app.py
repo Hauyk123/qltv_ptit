@@ -15,21 +15,26 @@ CORS(app)
 
 # Thông tin đăng nhập từ ảnh bạn cung cấp
 username = "hauyk123"
-password = "Hauyk@123" # Mật khẩu có chứa ký tự @
+password = "Hauyk@123"
 
-# Mã hóa mật khẩu để tránh lỗi InvalidURI
+# Mã hóa mật khẩu (biến 'Hauyk@123' thành 'Hauyk%40123')
 escaped_password = urllib.parse.quote_plus(password)
 
-# Tạo chuỗi kết nối hoàn chỉnh
-# Nếu bạn đã đặt biến MONGO_URI trên Render, code sẽ ưu tiên lấy từ đó
+# Ưu tiên lấy link từ biến môi trường của Render, nếu không có mới dùng link mặc định
 mongo_uri = os.environ.get('MONGO_URI')
 
 if not mongo_uri:
-    mongo_uri = f"mongodb+srv://{username}:{escaped_password}@cluster0.dcl7jiw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    mongo_uri = f"mongodb+srv://{username}:{escaped_password}@cluster0.dcl7jiw.mongodb.net/LibManagerDB?retryWrites=true&w=majority"
 
-client = MongoClient(mongo_uri)
+try:
+    client = MongoClient(mongo_uri)
+    db = client['LibManagerDB']
+    # Kiểm tra kết nối
+    client.admin.command('ping')
+    print("Kết nối MongoDB thành công!")
+except Exception as e:
+    print(f"Lỗi kết nối MongoDB: {e}")
 
-db = client['LibManagerDB']
 
 
 # --- ROUTING (ĐIỀU HƯỚNG HTML) ---
