@@ -5,15 +5,30 @@ from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from flask_cors import CORS
 import os
+import urllib.parse
+from pymongo import MongoClient
 app = Flask(__name__)
 app.secret_key = 'PTIT_LIB_SECURE_KEY_2025'  # Key bảo mật session
 CORS(app)
 
-# KẾT NỐI MONGODB
 
-# Lấy link từ biến môi trường để bảo mật, nếu không có thì dùng link Atlas trực tiếp
-mongo_uri = os.environ.get('MONGO_URI', 'mongodb+srv://hauyk123:Hauyk@123@cluster0.dcl7jiw.mongodb.net/?appName=Cluster0')
+
+# Thông tin đăng nhập từ ảnh bạn cung cấp
+username = "hauyk123"
+password = "Hauyk@123" # Mật khẩu có chứa ký tự @
+
+# Mã hóa mật khẩu để tránh lỗi InvalidURI
+escaped_password = urllib.parse.quote_plus(password)
+
+# Tạo chuỗi kết nối hoàn chỉnh
+# Nếu bạn đã đặt biến MONGO_URI trên Render, code sẽ ưu tiên lấy từ đó
+mongo_uri = os.environ.get('MONGO_URI')
+
+if not mongo_uri:
+    mongo_uri = f"mongodb+srv://{username}:{escaped_password}@cluster0.dcl7jiw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
 client = MongoClient(mongo_uri)
+
 db = client['LibManagerDB']
 
 
