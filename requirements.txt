@@ -1,5 +1,5 @@
 Flask
-pymongo
+pymongo[srv]
 werkzeug
 flask-cors
 gunicorn
