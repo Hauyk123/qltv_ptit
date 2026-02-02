@@ -4,13 +4,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from flask_cors import CORS
-
+import os
 app = Flask(__name__)
 app.secret_key = 'PTIT_LIB_SECURE_KEY_2025'  # Key bảo mật session
 CORS(app)
 
 # KẾT NỐI MONGODB
-client = MongoClient('mongodb://localhost:27017/')
+
+# Lấy link từ biến môi trường để bảo mật, nếu không có thì dùng link Atlas trực tiếp
+mongo_uri = os.environ.get('MONGO_URI', 'mongodb+srv://hauyk123:Hauyk@123@cluster0.dcl7jiw.mongodb.net/?appName=Cluster0')
+client = MongoClient(mongo_uri)
 db = client['LibManagerDB']
 
 
