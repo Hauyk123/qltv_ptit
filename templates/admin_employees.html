@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Nhân sự Hệ thống - MIS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', brand: '#6366f1' } } } } }
+    </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20 shrink-0">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-book-open text-sm"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin MIS</span>
+        </div>
+
+        <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
+            <div>
+                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
+                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS)</p>
+            <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
+            </a>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
+            <a href="/admin/books" class="nav-item {{ 'sidebar-active' if request.path == '/admin/books' or request.path.startswith('/admin/book/') else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+            </a>
+            <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+            </a>
+            <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+            </a>
+            <a href="/admin/fines" class="nav-item {{ 'sidebar-active' if request.path == '/admin/fines' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+            </a>
+            <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+            </a>
+
+            {% if session.get('role') == 'admin' %}
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+            <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+            </a>
+            <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+            </a>
+            <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="p-4 border-t border-slate-700/50">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden relative">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 z-10 shadow-sm shrink-0">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-users-cog text-indigo-600"></i> Danh sách Nhân viên Hệ thống
+            </h2>
+            <button onclick="document.getElementById('add-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md shadow-indigo-500/30 transition flex items-center gap-2">
+                <i class="fas fa-user-plus"></i> Cấp tài khoản mới
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col max-h-full">
+                <div class="p-0 overflow-y-auto flex-1">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 sticky top-0 shadow-sm z-10">
+                            <tr>
+                                <th class="py-4 px-6 font-medium">Họ & Tên</th>
+                                <th class="py-4 px-6 font-medium">Tên Đăng Nhập</th>
+                                <th class="py-4 px-6 font-medium text-center">Chức vụ / Quyền</th>
+                                <th class="py-4 px-6 font-medium">Ngày tham gia</th>
+                                <th class="py-4 px-6 font-medium text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-list" class="text-slate-700 divide-y divide-slate-50">
+                            <tr><td colspan="5" class="text-center py-8 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="add-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in flex flex-col">
+            <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Cấp Tài Khoản Nhân Sự</h3>
+                <button onclick="document.getElementById('add-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Họ và tên nhân viên</label>
+                    <input type="text" id="n-fullname" placeholder="VD: Nguyễn Văn A..." class="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Tên đăng nhập</label>
+                        <input type="text" id="n-username" placeholder="VD: thu_thu_01" class="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Mật khẩu mặc định</label>
+                        <input type="text" id="n-password" value="123456" class="w-full p-2.5 border border-slate-200 rounded-lg outline-none text-slate-500 bg-slate-50 font-mono shadow-inner" readonly>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Phân quyền Hệ thống (Role)</label>
+                    <select id="n-role" class="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-bold text-slate-700 transition">
+                        <option value="employee">Nhân viên (Thủ thư / Chỉ làm Nghiệp vụ)</option>
+                        <option value="admin">Quản lý Cấp cao (Admin / Toàn quyền)</option>
+                    </select>
+                </div>
+
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 flex items-start gap-2">
+                    <i class="fas fa-info-circle text-indigo-500 mt-0.5"></i>
+                    <p class="text-xs text-indigo-800 leading-relaxed">Tài khoản <b>Nhân viên</b> sẽ bị ẩn các mục Tài chính, Kiểm toán và Nhân sự để đảm bảo bảo mật nội bộ.</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button onclick="document.getElementById('add-modal').classList.add('hidden')" class="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-200 rounded-lg transition">Hủy bỏ</button>
+                <button onclick="createStaff(event)" class="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-500/30 transition flex items-center gap-2">
+                    <i class="fas fa-check"></i> Lưu tài khoản
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+
+        // Gọi API lấy danh sách nhân viên
+        function loadStaff() {
+            fetch('/api/admin/employees').then(r=>r.json()).then(data => {
+                const tbody = document.getElementById('staff-list');
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Hệ thống chưa có nhân viên nào.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(s => `
+                    <tr class="hover:bg-slate-50 transition group">
+                        <td class="py-4 px-6">
+                            <p class="font-bold text-slate-800">${s.fullname}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">${s.email || 'Chưa cập nhật email'}</p>
+                        </td>
+                        <td class="py-4 px-6 font-mono text-sm text-indigo-600 font-bold">${s.username}</td>
+                        <td class="py-4 px-6 text-center">
+                            ${s.role === 'admin'
+                                ? '<span class="bg-rose-100 text-rose-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i class="fas fa-crown mr-1"></i>Quản trị viên (Admin)</span>'
+                                : '<span class="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i class="fas fa-user-edit mr-1"></i>Nhân viên / Thủ thư</span>'}
+                        </td>
+                        <td class="py-4 px-6 text-sm text-slate-500 font-medium">${s.created_at_fmt}</td>
+                        <td class="py-4 px-6 text-right">
+                            <button onclick="deleteStaff('${s._id}', '${s.fullname}')" class="text-rose-400 hover:text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-lg transition opacity-0 group-hover:opacity-100" title="Khóa/Xóa tài khoản này">
+                                <i class="fas fa-user-times"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            });
+        }
+
+        loadStaff(); // Tải danh sách lần đầu
+
+        // Gọi API tạo tài khoản nhân sự mới
+        function createStaff(e) {
+            const fullname = document.getElementById('n-fullname').value.trim();
+            const username = document.getElementById('n-username').value.trim();
+            const role = document.getElementById('n-role').value;
+            const pass = document.getElementById('n-password').value;
+
+            if(!fullname || !username) return alert('Vui lòng nhập đầy đủ Họ tên và Tên đăng nhập!');
+
+            const btn = e.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang thiết lập...';
+
+            fetch('/api/admin/employee', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ fullname: fullname, username: username, role: role, password: pass })
+            }).then(r=>r.json()).then(d => {
+                if(d.status === 'success') {
+                    alert('Đã cấp tài khoản thành công!');
+                    document.getElementById('add-modal').classList.add('hidden');
+                    document.getElementById('n-fullname').value = '';
+                    document.getElementById('n-username').value = '';
+                    loadStaff(); // Load lại bảng
+                } else {
+                    alert('Lỗi: ' + d.message);
+                }
+            }).finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            });
+        }
+
+        // Khóa / Xóa quyền truy cập của nhân viên cũ
+        function deleteStaff(id, name) {
+            if(confirm(`CẢNH BÁO BẢO MẬT: Bạn có chắc chắn muốn Xóa / Thu hồi quyền truy cập hệ thống của nhân viên [${name}] không?`)) {
+                fetch(`/api/admin/employee/${id}`, { method: 'DELETE' })
+                .then(r=>r.json())
+                .then(d => {
+                    alert(d.message);
+                    if(d.status === 'success') loadStaff();
+                });
+            }
+        }
+    </script>
+</body>
+</html>

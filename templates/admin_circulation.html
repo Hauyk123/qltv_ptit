@@ -35,27 +35,42 @@
             </div>
         </div>
 
-        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
-            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
-            </a>
+       <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS/DSS)</p>
+    <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
+    </a>
 
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
-            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
-            </a>
-            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
-            </a>
-            <a href="/admin/circulation" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
-            </a>
-             <a href="/admin/fines" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
-            </a>
-        </nav>
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
+    <a href="/admin/books" class="nav-item {{ 'sidebar-active' if request.path == '/admin/books' or request.path.startswith('/admin/book/') else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+    </a>
+    <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+    </a>
+    <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+    </a>
+    <a href="/admin/fines" class="nav-item {{ 'sidebar-active' if request.path == '/admin/fines' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+    </a>
+    <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+    </a>
 
+    {% if session.get('role') == 'admin' %}
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+    <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+    </a>
+    <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+    </a>
+    <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+    </a>
+    {% endif %}
+</nav>
         <div class="p-4 border-t border-slate-700/50">
             <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
                 <i class="fas fa-sign-out-alt"></i> Đăng xuất

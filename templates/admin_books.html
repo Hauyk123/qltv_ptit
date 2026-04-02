@@ -37,24 +37,40 @@
         </div>
 
         <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
-            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS/DSS)</p>
+            <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
             </a>
 
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
             <a href="/admin/books" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
                 <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
             </a>
-            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+            <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
                 <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
             </a>
-            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+            <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
                 <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
             </a>
-             <a href="/admin/fines" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+            <a href="/admin/fines" class="nav-item {{ 'sidebar-active' if request.path == '/admin/fines' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
                 <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
             </a>
+            <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+            </a>
+
+            {% if session.get('role') == 'admin' %}
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+            <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+            </a>
+            <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+            </a>
+            <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+            </a>
+            {% endif %}
         </nav>
 
         <div class="p-4 border-t border-slate-700/50">
@@ -74,9 +90,9 @@
                 <div class="flex gap-3 flex-1 max-w-lg">
                     <div class="relative flex-1">
                         <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
-                        <input type="text" id="search-q" placeholder="Tìm kiếm sách..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="search-q" onkeyup="if(event.key==='Enter') loadBooks(1)" placeholder="Tìm kiếm sách..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
-                    <button onclick="loadBooks()" class="px-4 py-2.5 bg-slate-100 font-bold text-slate-600 rounded-xl hover:bg-slate-200">Tìm</button>
+                    <button onclick="loadBooks(1)" class="px-4 py-2.5 bg-slate-100 font-bold text-slate-600 rounded-xl hover:bg-slate-200">Tìm</button>
                 </div>
                 <button onclick="toggleModal(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2">
                     <i class="fas fa-plus"></i> Thêm sách mới
@@ -96,6 +112,7 @@
                     </thead>
                     <tbody id="book-list" class="divide-y divide-slate-100 text-sm"></tbody>
                 </table>
+                <div id="pagination" class="flex items-center justify-center gap-2 p-4 border-t bg-slate-50/50"></div>
             </div>
         </div>
     </main>
@@ -118,18 +135,18 @@
                 <div class="flex flex-col lg:flex-row gap-8">
 
                     <div class="w-full lg:w-1/3 flex flex-col">
-    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Ảnh bìa sách (URL)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Ảnh bìa sách (URL)</label>
 
-    <div class="mb-2">
-        <input type="text" name="image_url" placeholder="Dán link ảnh vào đây..."
-               class="w-full p-2 border border-slate-300 rounded text-sm"
-               onchange="document.getElementById('preview-img').src = this.value || 'https://via.placeholder.com/300x450?text=No+Image'">
-    </div>
+                        <div class="mb-2">
+                            <input type="text" name="image_url" placeholder="Dán link ảnh vào đây..."
+                                   class="w-full p-2 border border-slate-300 rounded text-sm"
+                                   onchange="document.getElementById('preview-img').src = this.value || 'https://via.placeholder.com/300x450?text=No+Image'">
+                        </div>
 
-    <div class="w-full aspect-[2/3] bg-slate-100 rounded-xl border border-slate-200 overflow-hidden">
-        <img id="preview-img" src="https://via.placeholder.com/300x450?text=No+Image" class="w-full h-full object-cover">
-    </div>
-</div>
+                        <div class="w-full aspect-[2/3] bg-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+                            <img id="preview-img" src="https://via.placeholder.com/300x450?text=No+Image" class="w-full h-full object-cover">
+                        </div>
+                    </div>
 
                     <div class="flex-1 space-y-5">
                         <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 items-end">
@@ -227,7 +244,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', loadBooks);
+        document.addEventListener('DOMContentLoaded', () => loadBooks(1));
 
         // --- Modal & Image Logic ---
         function toggleModal(show) {
@@ -236,31 +253,19 @@
                 m.classList.remove('hidden');
                 m.classList.add('flex');
                 document.getElementById('book-form').reset();
-                document.getElementById('book-cover-preview').classList.add('hidden');
             } else {
                 m.classList.add('hidden');
                 m.classList.remove('flex');
             }
         }
 
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById('book-cover-preview');
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
         // --- API Logic ---
-        async function loadBooks() {
+        async function loadBooks(page = 1) {
             const q = document.getElementById('search-q').value;
-            const res = await fetch(`/api/books?q=${q}`);
-            const books = await res.json();
-            document.getElementById('book-list').innerHTML = books.map(b => `
+            const res = await fetch(`/api/books?q=${q}&page=${page}`);
+            const result = await res.json();
+
+            document.getElementById('book-list').innerHTML = result.data.map(b => `
                 <tr class="hover:bg-slate-50/80 transition group">
                     <td class="p-4 pl-6">
                         <div class="flex items-center gap-3">
@@ -284,16 +289,26 @@
                     </td>
                 </tr>
             `).join('');
+
+            renderPagination(result.total_pages, result.current_page);
+        }
+
+        function renderPagination(totalPages, currentPage) {
+            const container = document.getElementById('pagination');
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button onclick="loadBooks(${i})" class="px-3 py-1 rounded border font-medium transition ${i === currentPage ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 hover:bg-slate-50'}">${i}</button>`;
+            }
+            container.innerHTML = html;
         }
 
         async function handleSaveBook(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
-            // Convert FormData to JSON (Lưu ý: chưa xử lý upload file ảnh trong bản demo này)
             const data = Object.fromEntries(formData.entries());
             data.qty = parseInt(data.qty);
-
-            // Xóa trường image (file object) vì API JSON hiện tại không nhận file
             delete data.image;
 
             const res = await fetch('/api/admin/book', {
@@ -306,12 +321,22 @@
             if(result.status === 'success') {
                 alert('Thành công!');
                 toggleModal(false);
-                loadBooks();
+                loadBooks(1);
             } else alert(result.message);
         }
 
-        async function deleteBook(isbn) { if(!confirm('Xóa sách này?')) return; const res = await fetch(`/api/admin/book/${isbn}`, { method: 'DELETE' }); const data = await res.json(); if(data.status === 'success') loadBooks(); else alert(data.message); }
-        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
+        async function deleteBook(isbn) {
+            if(!confirm('Xóa sách này?')) return;
+            const res = await fetch(`/api/admin/book/${isbn}`, { method: 'DELETE' });
+            const data = await res.json();
+            if(data.status === 'success') loadBooks(1);
+            else alert(data.message);
+        }
+
+        async function logout() {
+            await fetch('/api/logout', {method:'POST'});
+            window.location.href='/';
+        }
     </script>
 </body>
 </html>

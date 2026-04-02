@@ -173,21 +173,31 @@
         let currentBookData = null;
 
         // AUTH Logic
-        async function handleLogin() {
-            const u = document.getElementById('login-user').value;
-            const p = document.getElementById('login-pass').value;
-            try {
-                const res = await fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: u, password: p}) });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    if (data.role === 'admin') window.location.href = '/admin'; else window.location.reload();
-                } else showToast(data.message, 'error');
-            } catch (error) { showToast('Lỗi kết nối server!', 'error'); }
+async function handleLogin() {
+    const u = document.getElementById('login-user').value;
+    const p = document.getElementById('login-pass').value;
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: u, password: p})
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            // SỬA Ở ĐÂY: Cho phép cả 'admin' và 'employee' vào trang quản trị
+            if (data.role === 'admin' || data.role === 'employee') {
+                window.location.href = '/admin';
+            } else {
+                window.location.reload();
+            }
+        } else {
+            showToast(data.message, 'error');
         }
-        async function logout() { await fetch('/api/logout', {method:'POST'}); location.reload(); }
-
-        document.addEventListener('DOMContentLoaded', () => { if(document.getElementById('auth-screen').classList.contains('hidden')) { loadBooks(); loadCart(); } });
-
+    } catch (error) {
+        showToast('Lỗi kết nối server!', 'error');
+    }
+}
         // LOAD BOOKS (Hiển thị ảnh bìa)
         async function loadBooks() {
             const q = document.getElementById('search-input').value;

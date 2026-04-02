@@ -2,13 +2,19 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý Thu Phạt</title>
+    <title>Quản lý Thu Phạt - LibAdmin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a' } } } } }
     </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
     <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20">
@@ -21,13 +27,40 @@
             <div><p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p><p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p></div>
         </div>
         <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
-            <a href="/admin" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-chart-pie w-5"></i> Dashboard</a>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
-            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-book w-5"></i> Quản lý Sách</a>
-            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-users w-5"></i> Quản lý Độc giả</a>
-            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-sync-alt w-5"></i> Mượn - Trả Sách</a>
-             <a href="/admin/fines" class="nav-item bg-slate-800 text-white flex items-center gap-3 px-4 py-3 rounded-lg transition group"><i class="fas fa-file-invoice-dollar w-5"></i> Thu Phạt</a>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS/DSS)</p>
+            <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
+            </a>
+
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
+            <a href="/admin/books" class="nav-item {{ 'sidebar-active' if request.path == '/admin/books' or request.path.startswith('/admin/book/') else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+            </a>
+            <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+            </a>
+            <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+            </a>
+            <a href="/admin/fines" class="nav-item sidebar-active flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+            </a>
+            <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+            </a>
+
+            {% if session.get('role') == 'admin' %}
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+            <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+            </a>
+            <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+            </a>
+            <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+                <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+            </a>
+            {% endif %}
         </nav>
         <div class="p-4 border-t border-slate-700/50"><button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></div>
     </aside>
@@ -35,19 +68,31 @@
     <main class="flex-1 flex flex-col h-full overflow-hidden">
         <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 shadow-sm">
             <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-file-invoice-dollar text-indigo-600 mr-2"></i> Danh sách Phiếu phạt</h2>
-            <button onclick="toggleModal('fine-modal', true)" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-rose-500/30 transition flex items-center gap-2">
-                <i class="fas fa-plus"></i> Lập phiếu phạt
-            </button>
+
+            <div class="flex items-center gap-3">
+                <div class="relative w-64">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400"></i>
+                    <input type="text" id="fine-search" onkeyup="if(event.key==='Enter') loadFines(1)" placeholder="Tìm tên, MSV, nội dung..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+                <button onclick="loadFines(1)" class="px-4 py-2 bg-slate-100 font-bold text-slate-600 rounded-lg hover:bg-slate-200 text-sm transition">Tìm</button>
+                <div class="w-px h-6 bg-slate-200 mx-1"></div>
+                <button onclick="toggleModal('fine-modal', true)" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg shadow-rose-500/30 transition flex items-center gap-2 text-sm">
+                    <i class="fas fa-plus"></i> Lập phiếu phạt
+                </button>
+            </div>
         </header>
 
         <div class="flex-1 overflow-y-auto p-6">
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs border-b border-slate-100">
-                        <tr><th class="p-4">Độc giả</th><th class="p-4">Lý do phạt</th><th class="p-4 text-right">Số tiền</th><th class="p-4">Ngày tạo</th><th class="p-4 text-center">Trạng thái</th><th class="p-4 text-right">Tác vụ</th></tr>
-                    </thead>
-                    <tbody id="fine-list" class="divide-y divide-slate-100 text-sm"></tbody>
-                </table>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200 flex flex-col h-full">
+                <div class="flex-1 overflow-y-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs border-b border-slate-100 sticky top-0 z-10">
+                            <tr><th class="p-4">Độc giả</th><th class="p-4">Lý do phạt</th><th class="p-4 text-right">Số tiền</th><th class="p-4">Ngày tạo</th><th class="p-4 text-center">Trạng thái</th><th class="p-4 text-right">Tác vụ</th></tr>
+                        </thead>
+                        <tbody id="fine-list" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+                <div id="pagination" class="flex items-center justify-center gap-2 p-4 border-t border-slate-100 bg-slate-50/50 flex-shrink-0"></div>
             </div>
         </div>
     </main>
@@ -105,7 +150,8 @@
     <script>
         let selectedUserId = null;
 
-        loadFines();
+        document.addEventListener('DOMContentLoaded', () => loadFines(1));
+
         async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href='/'; }
 
         function toggleModal(id, show) {
@@ -114,10 +160,13 @@
             else el.classList.add('hidden');
         }
 
-        async function loadFines() {
-            const res = await fetch('/api/admin/fines');
-            const fines = await res.json();
-            document.getElementById('fine-list').innerHTML = fines.map(f => {
+        // Tích hợp Tìm kiếm & Phân trang
+        async function loadFines(page = 1) {
+            const q = document.getElementById('fine-search').value;
+            const res = await fetch(`/api/admin/fines?q=${q}&page=${page}`);
+            const result = await res.json();
+
+            document.getElementById('fine-list').innerHTML = result.data.map(f => {
                 let reasonBadge = '';
                 if(f.reason === 'overdue') reasonBadge = '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-bold">Quá hạn</span>';
                 else if(f.reason === 'damaged') reasonBadge = '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold">Sách hỏng</span>';
@@ -125,7 +174,7 @@
                 else reasonBadge = '<span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">Khác</span>';
 
                 return `
-                <tr class="hover:bg-slate-50">
+                <tr class="hover:bg-slate-50 transition">
                     <td class="p-4"><p class="font-bold text-slate-800">${f.user_name}</p><p class="text-xs text-slate-500 font-mono">${f.user_msv}</p></td>
                     <td class="p-4">
                         ${reasonBadge}
@@ -134,12 +183,25 @@
                     <td class="p-4 text-right font-bold text-slate-800">${f.amount.toLocaleString()}đ</td>
                     <td class="p-4 text-slate-500 text-xs">${f.created_at}</td>
                     <td class="p-4 text-center">${f.is_paid ? '<span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded">Đã TT</span>' : '<span class="text-rose-500 font-bold bg-rose-50 px-2 py-1 rounded">Chưa TT</span>'}</td>
-                    <td class="p-4 text-right">${!f.is_paid ? `<button onclick="payFine('${f._id}')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow shadow-indigo-500/30">Thu tiền</button>` : '<i class="fas fa-check-circle text-emerald-500 text-lg"></i>'}</td>
+                    <td class="p-4 text-right">${!f.is_paid ? `<button onclick="payFine('${f._id}')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow shadow-indigo-500/30 transition">Thu tiền</button>` : '<i class="fas fa-check-circle text-emerald-500 text-lg"></i>'}</td>
                 </tr>`;
             }).join('');
+
+            renderPagination(result.total_pages, result.current_page);
         }
 
-        // Logic Tìm kiếm User
+        function renderPagination(totalPages, currentPage) {
+            const container = document.getElementById('pagination');
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button onclick="loadFines(${i})" class="px-3 py-1 rounded-lg border font-medium transition ${i === currentPage ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'}">${i}</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // Logic Tìm kiếm User khi lập phiếu phạt
         async function searchUser(keyword) {
             if(keyword.length < 2) { document.getElementById('user-results').classList.add('hidden'); return; }
             const res = await fetch(`/api/admin/find-user?q=${keyword}`);
@@ -213,13 +275,22 @@
             if(data.status === 'success') {
                 alert('Tạo phiếu phạt thành công!');
                 toggleModal('fine-modal', false);
-                loadFines();
+                loadFines(1);
             } else {
                 alert(data.message);
             }
         }
 
-        async function payFine(id) { if(confirm('Xác nhận đã thu tiền?')) { await fetch('/api/admin/pay-fine', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})}); loadFines(); } }
+        async function payFine(id) {
+            if(confirm('Xác nhận đã thu tiền?')) {
+                await fetch('/api/admin/pay-fine', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({id:id})
+                });
+                loadFines(1);
+            }
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhật Ký Gửi Thư - LibAdmin MIS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        admin: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', brand: '#6366f1' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-book-open text-sm"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin MIS</span>
+        </div>
+        <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
+            <div>
+                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
+                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS/DSS)</p>
+    <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
+    </a>
+
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
+    <a href="/admin/books" class="nav-item {{ 'sidebar-active' if request.path == '/admin/books' or request.path.startswith('/admin/book/') else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+    </a>
+    <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+    </a>
+    <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+    </a>
+    <a href="/admin/fines" class="nav-item {{ 'sidebar-active' if request.path == '/admin/fines' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+    </a>
+    <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+    </a>
+
+    {% if session.get('role') == 'admin' %}
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+    <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+    </a>
+    <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+    </a>
+    <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+    </a>
+    {% endif %}
+</nav>
+
+        <div class="p-4 border-t border-slate-700/50">
+            <a href="/admin" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-lg transition text-sm font-medium">
+                <i class="fas fa-arrow-left"></i> Về Dashboard
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-8 z-10 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <i class="fas fa-history text-indigo-600"></i> Nhật ký gửi thư (OAS Logs)
+            </h2>
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-medium text-slate-400 bg-slate-100 px-3 py-1.5 rounded-full italic">Cập nhật thời gian thực</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/50 border-b border-slate-100">
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Thời gian</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Phân loại</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Người nhận / Quy mô</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Chủ đề</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-table-body" class="divide-y divide-slate-50 text-sm text-slate-700">
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                <i class="fas fa-spinner fa-spin mr-2"></i> Đang truy xuất nhật ký từ hệ thống...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/admin/oas/logs-data');
+                const logs = await response.json();
+                const tbody = document.getElementById('log-table-body');
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-16 text-center text-slate-400 italic font-medium"><i class="fas fa-folder-open mb-3 text-3xl block opacity-20"></i>Chưa có bản ghi gửi thư nào được thực hiện.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(log => `
+                    <tr class="hover:bg-slate-50/50 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-slate-500 font-medium">${log.sent_at_fmt}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-tight ${log.type.includes('Nhắc nợ') ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'}">
+                                ${log.type}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 font-medium text-slate-800">
+                            ${log.recipient || `<span class="text-indigo-600 font-bold"><i class="fas fa-users-viewfinder mr-1"></i> ${log.recipients_count} Độc giả</span>`}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="truncate max-w-[250px] font-medium" title="${log.subject}">${log.subject}</div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${log.status === 'Thành công' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}">
+                                <span class="w-1.5 h-1.5 rounded-full ${log.status === 'Thành công' ? 'bg-emerald-500' : 'bg-rose-500'} ${log.status === 'Thành công' ? 'animate-pulse' : ''}"></span>
+                                ${log.status}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error("Lỗi hệ thống:", error);
+                document.getElementById('log-table-body').innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-rose-500">Lỗi kết nối API nhật ký.</td></tr>';
+            }
+        }
+
+        // Khởi chạy khi tải trang
+        loadLogs();
+    </script>
+</body>
+</html>

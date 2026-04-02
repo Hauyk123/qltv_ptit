@@ -1,3 +1,10 @@
+import csv
+import copy
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from io import StringIO
+from flask import Response
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,10 +20,20 @@ CORS(app)
 client = MongoClient('mongodb://localhost:27017/')
 db = client['LibManagerDB']
 
-
 # --- ROUTING (ĐIỀU HƯỚNG HTML) ---
 @app.route('/')
-def user_home():
+def home():
+    # Nếu chưa đăng nhập
+    if 'user_id' not in session:
+        # SỬA Ở ĐÂY: Thay 'login.html' bằng tên file HTML thực tế chứa giao diện đăng nhập của bạn.
+        # (Thường sẽ là 'index.html' hoặc 'user_home.html')
+        return render_template('user_home.html')
+
+        # Nếu đã đăng nhập và là Admin hoặc Nhân viên
+    if session.get('role') in ['admin', 'employee']:
+        return redirect('/admin')
+
+    # Nếu đã đăng nhập và là Sinh viên
     return render_template('user_home.html')
 
 
@@ -27,19 +44,519 @@ def user_book_detail(isbn):
 
 @app.route('/admin')
 def admin_dashboard():
-    if session.get('role') != 'admin': return redirect('/')
+    if session.get('role') not in ['admin', 'employee']:
+        return redirect('/')
     return render_template('admin_dashboard.html')
 
 
 @app.route('/admin/book/<isbn>')
 def admin_book_detail(isbn):
-    if session.get('role') != 'admin': return redirect('/')
+    if session.get('role') not in ['admin', 'employee']:
+        return redirect('/')
     return render_template('admin_book_detail.html', isbn=isbn)
 
 @app.route('/admin/books')
 def admin_books():
-    if session.get('role') != 'admin': return redirect('/')
+    if session.get('role') not in ['admin', 'employee']:
+        return redirect('/')
     return render_template('admin_books.html')
+@app.route('/admin/finance')
+def admin_finance():
+    if session.get('role') not in ['admin', 'employee']:
+        return redirect('/')
+    return render_template('admin_finance.html')
+
+@app.route('/admin/hr')
+def admin_hr():
+    if session.get('role') not in ['admin', 'employee']:
+        return redirect('/')
+    return render_template('admin_hr.html')
+# --- API OAS: GỬI EMAIL TỰ ĐỘNG (OFFICE AUTOMATION SYSTEM) ---
+
+# TODO: ĐIỀN EMAIL VÀ MẬT KHẨU ỨNG DỤNG CỦA BẠN VÀO ĐÂY
+SENDER_EMAIL = "dangconghau13032004@gmail.com"
+SENDER_PASSWORD = "zfgd zfhf ebqw idub"
+
+
+@app.route('/api/admin/oas/send-warning-email', methods=['POST'])
+def oas_send_warning_email():
+    if session.get('role') not in ['admin', 'employee']:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+
+    data = request.json
+    msv = data.get('msv')
+    total_fine = data.get('total_fine', 0)
+    overdue_books = data.get('overdue_books', 0)
+
+    # 1. Lấy thông tin sinh viên từ DB
+    user = db.users.find_one({'msv': msv})
+    if not user or not user.get('email'):
+        return jsonify({'status': 'error', 'message': 'Không tìm thấy thông tin email sinh viên!'}), 404
+
+    receiver_email = user['email']
+    fine_fmt = "{:,}".format(int(total_fine))
+
+    # 2. Xây dựng nội dung GỐC của bạn đưa vào Template
+    # Giữ nguyên các câu chữ: "Hệ thống tự động...", "Yêu cầu bạn mang sách...", "Việc chậm trễ..."
+    body_content = f"""
+        <p>Chào bạn <b>{user['fullname']}</b> (MSV: {user['msv']}),</p>
+        <p>Hệ thống tự động của Thư viện ghi nhận bạn hiện đang có:</p>
+        <ul style="color: #6366f1; font-weight: bold; list-style-type: none; padding-left: 0;">
+            <li style="margin-bottom: 8px;">• {overdue_books} cuốn sách đang quá hạn trả.</li>
+            <li>• Tổng số tiền phạt trễ hạn: {fine_fmt} VNĐ.</li>
+        </ul>
+        <p>Yêu cầu bạn mang sách đến thư viện để hoàn tất thủ tục trả sách và đóng phạt trong thời gian sớm nhất.</p>
+        <p style="background: #fff1f2; padding: 12px; border-radius: 8px; color: #e11d48; font-size: 14px; border: 1px solid #fecdd3;">
+            <b>CẢNH BÁO:</b> Việc chậm trễ có thể dẫn đến việc tài khoản mượn sách của bạn bị khóa vĩnh viễn.
+        </p>
+    """
+
+    # Render vào template Indigo
+    try:
+        html_content = render_template(
+            'email_template.html',
+            fullname=user['fullname'],
+            body_content=body_content,
+            button_text="Xem chi tiết tài khoản",
+            button_url="http://localhost:5000/login"
+        )
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Lỗi hệ thống template!'}), 500
+
+    # 3. Gửi Email và Ghi Log
+    status_log = "Thành công"
+    error_log = ""
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = f"Thư Viện PTIT <{SENDER_EMAIL}>"
+        msg['To'] = receiver_email
+        msg['Subject'] = "[QUAN TRỌNG] Thông báo trả sách và thanh toán nợ phạt Thư viện"
+        msg.attach(MIMEText(html_content, 'html'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+
+        # Cập nhật số lần nhắc nhở
+        db.users.update_one({'msv': msv}, {'$inc': {'warning_count': 1}})
+
+    except Exception as e:
+        status_log = "Thất bại"
+        error_log = str(e)
+
+    # 4. Lưu Log hệ thống (Chuẩn OAS)
+    db.email_logs.insert_one({
+        'msv': msv,
+        'recipient': receiver_email,
+        'type': 'Nhắc nợ (Template)',
+        'sent_at': datetime.now(),
+        'status': status_log,
+        'error_detail': error_log
+    })
+
+    if status_log == "Thành công":
+        return jsonify({'status': 'success', 'message': f'Đã gửi email thành công tới {receiver_email}'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Gửi mail thất bại.'}), 500
+
+# --- API OAS: GỬI THÔNG BÁO HÀNG LOẠT TỚI TOÀN BỘ ĐỘC GIẢ ---
+
+@app.route('/api/admin/oas/send-mass-email', methods=['POST'])
+def oas_send_mass_email():
+    """
+    Hệ thống OAS: Gửi thông báo hàng loạt tới toàn bộ độc giả.
+    Sử dụng Template chuyên nghiệp và ghi lại nhật ký chiến dịch (Logging).
+    """
+    if session.get('role') not in ['admin', 'employee']:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+
+    data = request.json
+    subject = data.get('subject', 'Thông báo từ Thư viện PTIT')
+    content = data.get('content', '')
+
+    # 1. Lấy danh sách email của tất cả độc giả (role='user')
+    users = list(db.users.find({'role': 'user', 'email': {'$exists': True, '$ne': ''}}))
+    if not users:
+        return jsonify({'status': 'error', 'message': 'Không có độc giả nào có email hợp lệ.'}), 400
+
+    recipient_emails = [u['email'] for u in users]
+
+    # 2. Xây dựng nội dung Email bằng Template Indigo
+    # Chuyển đổi ký tự xuống dòng (\n) thành thẻ <br> để hiển thị đúng trong HTML
+    html_formatted_content = content.replace('\n', '<br>')
+
+    # Nội dung gửi đi (có thể tùy biến thêm lời chào chung)
+    body_content = f"""
+        <p>Chào các bạn sinh viên và độc giả của Thư viện PTIT,</p>
+        <p>{html_formatted_content}</p>
+        <p style="margin-top: 20px;">Trân trọng,<br><b>Ban quản lý Thư viện</b></p>
+    """
+
+    try:
+        # Sử dụng render_template để tạo email chuyên nghiệp
+        html_email = render_template(
+            'email_template.html',
+            fullname="Các bạn Độc giả",
+            body_content=body_content,
+            button_text="Truy cập Website Thư viện",
+            button_url="http://localhost:5000"  # Thay đổi link khi chạy thực tế
+        )
+    except Exception as e:
+        print(f"Lỗi render template: {e}")
+        return jsonify({'status': 'error', 'message': 'Lỗi hệ thống template!'}), 500
+
+    # 3. Gửi Email đồng loạt và Ghi nhật ký
+    status_log = "Thành công"
+    error_log = ""
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = f"Thư Viện PTIT <{SENDER_EMAIL}>"
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_email, 'html'))
+
+        # Kết nối và gửi qua SMTP Gmail
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+
+        # Gửi theo phương thức BCC (giấu danh sách người nhận lẫn nhau)
+        server.sendmail(SENDER_EMAIL, recipient_emails, msg.as_string())
+        server.quit()
+
+    except Exception as e:
+        print("Lỗi gửi mail hàng loạt:", e)
+        status_log = "Thất bại"
+        error_log = str(e)
+
+    # 4. LƯU NHẬT KÝ CHIẾN DỊCH (OAS Logging)
+    db.email_logs.insert_one({
+        'type': 'Thông báo hàng loạt',
+        'subject': subject,
+        'recipients_count': len(recipient_emails),
+        'sent_at': datetime.now(),
+        'status': status_log,
+        'error_detail': error_log
+    })
+
+    if status_log == "Thành công":
+        return jsonify({
+            'status': 'success',
+            'message': f'Hệ thống OAS đã gửi thông báo thành công tới {len(recipient_emails)} độc giả!'
+        })
+    else:
+        return jsonify({
+            'status': 'error',
+            'message': 'Gửi thông báo thất bại. Vui lòng kiểm tra Log hệ thống.'
+        }), 500
+
+
+# --- ROUTE & API XEM NHẬT KÝ GỬI THƯ (OAS LOGS) ---
+
+@app.route('/admin/oas/logs')
+def admin_email_logs_page():
+    """Mở trang giao diện Nhật ký gửi thư"""
+    if session.get('role') not in ['admin', 'employee']: return redirect('/')
+    return render_template('admin_email_logs.html')
+
+
+@app.route('/api/admin/oas/logs-data')
+def get_email_logs_api():
+    """API lấy danh sách log từ MongoDB trả về cho giao diện"""
+    if session.get('role') not in ['admin', 'employee']: return jsonify([]), 403
+
+    # Lấy toàn bộ log, sắp xếp cái mới nhất hiện lên đầu
+    logs = list(db.email_logs.find().sort('sent_at', -1))
+
+    for log in logs:
+        log['_id'] = str(log['_id'])
+        # Định dạng lại ngày giờ cho đẹp: HH:mm - DD/MM/YYYY
+        if 'sent_at' in log:
+            log['sent_at_fmt'] = log['sent_at'].strftime("%H:%M - %d/%m/%Y")
+
+    return jsonify(logs)
+# --- API DSS: EXPORT BÁO CÁO NGOẠI LỆ RA FILE EXCEL/CSV ---
+
+@app.route('/api/admin/dss/export/high-risk', methods=['GET'])
+def dss_export_high_risk():
+    """Xuất danh sách Độc giả rủi ro cao ra file CSV"""
+    if session.get('role') not in ['admin', 'employee']: return redirect('/')
+
+    # Tái sử dụng logic Aggregation của High-Risk Users
+    pipeline = [
+        {'$match': {
+            '$or': [
+                {'fine_paid': False, 'fine': {'$gt': 0}},
+                {'status': 'borrowing', 'due_date': {'$lt': datetime.now()}}
+            ]
+        }},
+        {'$group': {
+            '_id': '$user_id',
+            'total_unpaid_fine': {'$sum': {'$cond': [{'$eq': ['$fine_paid', False]}, '$fine', 0]}},
+            'overdue_books_count': {'$sum': {'$cond': [{'$eq': ['$status', 'borrowing']}, 1, 0]}}
+        }},
+        {'$match': {
+            '$or': [
+                {'total_unpaid_fine': {'$gte': 20000}},
+                {'overdue_books_count': {'$gte': 2}}
+            ]
+        }},
+        {'$sort': {'total_unpaid_fine': -1}}
+    ]
+    risky_users_data = list(db.transactions.aggregate(pipeline))
+
+    # Hàm tạo dữ liệu CSV
+    def generate():
+        data = StringIO()
+        data.write('\ufeff')  # Thêm BOM để Excel hiển thị đúng font Tiếng Việt
+        writer = csv.writer(data)
+
+        # Viết Header
+        writer.writerow(['Mã sinh viên', 'Họ và tên', 'Tổng nợ phạt (VNĐ)', 'Số sách đang quá hạn'])
+
+        # Viết Data
+        for u in risky_users_data:
+            user_info = db.users.find_one({'_id': ObjectId(u['_id'])})
+            if user_info:
+                writer.writerow([
+                    user_info.get('msv', 'N/A'),
+                    user_info.get('fullname', 'N/A'),
+                    u['total_unpaid_fine'],
+                    u['overdue_books_count']
+                ])
+        yield data.getvalue()
+        data.seek(0)
+        data.truncate(0)
+
+    # Trả về file cho trình duyệt tải xuống
+    response = Response(generate(), mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="Bao_Cao_Doc_Gia_Rui_Ro.csv")
+    return response
+
+
+@app.route('/api/admin/dss/export/unused-books', methods=['GET'])
+def dss_export_unused_books():
+    """Xuất danh sách Sách cần thanh lý ra file CSV"""
+    if session.get('role') not in ['admin', 'employee']: return redirect('/')
+
+    borrowed_titles = db.transactions.distinct('book_title')
+    unused_books = list(db.books.find({
+        'title': {'$nin': borrowed_titles}
+    }).sort('created_at', 1))
+
+    def generate():
+        data = StringIO()
+        data.write('\ufeff')
+        writer = csv.writer(data)
+
+        writer.writerow(['Mã ISBN', 'Tên cuốn sách', 'Tác giả', 'Thể loại', 'Số lượng tồn kho'])
+
+        for b in unused_books:
+            writer.writerow([
+                b.get('isbn', ''),
+                b.get('title', ''),
+                b.get('author', ''),
+                b.get('category', ''),
+                b.get('qty_total', 0)
+            ])
+        yield data.getvalue()
+        data.seek(0)
+        data.truncate(0)
+
+    response = Response(generate(), mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="Bao_Cao_Sach_Ton_Kho.csv")
+    return response
+
+
+@app.route('/api/admin/eis/kpis', methods=['GET'])
+def get_eis_kpis():
+    if session.get('role') not in ['admin', 'employee']:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
+
+    # 1. Tỷ lệ khai thác tài nguyên (Resource Utilization)
+    total_copies = db.book_copies.count_documents({})
+    borrowed_copies = db.book_copies.count_documents({'status': {'$in': ['borrowed', 'pending']}})
+    utilization_rate = round((borrowed_copies / total_copies) * 100, 1) if total_copies > 0 else 0
+
+    # 2. Tỷ lệ Độc giả tích cực (Active Users trong 30 ngày qua)
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    active_users = len(db.transactions.distinct('user_id', {'borrow_date': {'$gte': thirty_days_ago}}))
+    total_users = db.users.count_documents({'role': 'user'})
+    active_user_rate = round((active_users / total_users) * 100, 1) if total_users > 0 else 0
+
+    # 3. Tỷ lệ rủi ro quá hạn (Overdue Risk Rate)
+    active_loans = db.transactions.count_documents({'status': 'borrowing'})
+    overdue_loans = db.transactions.count_documents({
+        'status': 'borrowing',
+        'due_date': {'$lt': datetime.now()}
+    })
+    overdue_rate = round((overdue_loans / active_loans) * 100, 1) if active_loans > 0 else 0
+
+    # 4. Phân tích Tài chính (SỬA LẠI ĐỂ ĐỒNG BỘ VỚI DB_SEED)
+
+    # Tính tiền đã thu và nợ đọng từ bảng 'transactions' (Dữ liệu của db_seed)
+    trans_paid = list(db.transactions.aggregate([
+        {'$match': {'fine_paid': True, 'fine': {'$gt': 0}}},
+        {'$group': {'_id': None, 'total': {'$sum': '$fine'}}}
+    ]))
+    trans_unpaid = list(db.transactions.aggregate([
+        {'$match': {'fine_paid': False, 'fine': {'$gt': 0}}},
+        {'$group': {'_id': None, 'total': {'$sum': '$fine'}}}
+    ]))
+
+    # Tính tiền đã thu và nợ đọng từ bảng 'fines' (Phiếu phạt thủ công mới)
+    manual_paid = list(db.fines.aggregate([
+        {'$match': {'status': 'paid'}},
+        {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+    ]))
+    manual_unpaid = list(db.fines.aggregate([
+        {'$match': {'status': 'unpaid'}},
+        {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+    ]))
+
+    # Cộng gộp 2 nguồn lại với nhau
+    total_paid = (trans_paid[0]['total'] if trans_paid else 0) + (manual_paid[0]['total'] if manual_paid else 0)
+    total_unpaid = (trans_unpaid[0]['total'] if trans_unpaid else 0) + (
+        manual_unpaid[0]['total'] if manual_unpaid else 0)
+
+    return jsonify({
+        'utilization_rate': utilization_rate,
+        'active_user_rate': active_user_rate,
+        'overdue_rate': overdue_rate,
+        'financial': {
+            'collected': total_paid,
+            'outstanding': total_unpaid
+        }
+    })
+# --- API DSS: PHÂN TÍCH XU HƯỚNG (TREND ANALYSIS) ---
+@app.route('/api/admin/dss/category-trends', methods=['GET'])
+def dss_category_trends():
+    if session.get('role') not in ['admin', 'employee']: return jsonify({}), 403
+
+    # Lấy tham số thời gian từ URL (Mặc định là 'all' - Tất cả)
+    period = request.args.get('period', 'all')
+
+    # 1. Khởi tạo bộ lọc cơ bản (Chỉ tính sách đang mượn hoặc đã trả)
+    match_stage = {'status': {'$in': ['borrowing', 'returned']}}
+
+    # 2. Xử lý logic thời gian
+    if period != 'all':
+        now = datetime.now()
+        if period == 'month':
+            start_date = now - timedelta(days=30)
+        elif period == 'quarter':
+            start_date = now - timedelta(days=90)
+        elif period == 'year':
+            start_date = now - timedelta(days=365)
+        else:
+            start_date = None
+
+        if start_date:
+            match_stage['borrow_date'] = {'$gte': start_date}
+
+    # 3. Aggregation Pipeline
+    pipeline = [
+        {'$match': match_stage},
+        {'$lookup': {
+            'from': 'books',
+            'localField': 'book_title',
+            'foreignField': 'title',
+            'as': 'book_info'
+        }},
+        {'$unwind': '$book_info'},
+        {'$group': {
+            '_id': '$book_info.category',
+            'borrow_count': {'$sum': 1}
+        }},
+        {'$sort': {'borrow_count': -1}}
+    ]
+
+    trends = list(db.transactions.aggregate(pipeline))
+
+    labels = [t['_id'] for t in trends]
+    data = [t['borrow_count'] for t in trends]
+
+    return jsonify({
+        'labels': labels,
+        'data': data
+    })
+# --- API DSS: BÁO CÁO NGOẠI LỆ (EXCEPTION REPORTS) ---
+
+@app.route('/api/admin/dss/unused-books', methods=['GET'])
+def dss_unused_books():
+    """
+    Báo cáo ngoại lệ 1: Các đầu sách chưa từng được mượn lần nào.
+    Mục đích (DSS): Hỗ trợ ra quyết định thanh lý hoặc chuyển kho, dừng nhập thêm sách này.
+    """
+    if session.get('role') not in ['admin', 'employee']: return jsonify([]), 403
+
+    # Lấy danh sách tên sách đã từng được mượn ít nhất 1 lần
+    borrowed_titles = db.transactions.distinct('book_title')
+
+    # Tìm các đầu sách KHÔNG nằm trong danh sách đã mượn
+    unused_books = list(db.books.find({
+        'title': {'$nin': borrowed_titles}
+    }, {'_id': 0, 'isbn': 1, 'title': 1, 'category': 1, 'qty_total': 1, 'created_at': 1}))
+
+    # Format lại ngày tháng cho dễ đọc
+    for b in unused_books:
+        b['created_at_fmt'] = b.get('created_at', datetime.now()).strftime('%d/%m/%Y')
+
+    return jsonify(unused_books)
+
+
+@app.route('/api/admin/dss/high-risk-users', methods=['GET'])
+def dss_high_risk_users():
+    """
+    Báo cáo ngoại lệ 2: Độc giả rủi ro cao (Nợ tiền phạt lớn hoặc quá hạn nhiều sách).
+    Mục đích (DSS): Ra quyết định khóa tài khoản hoặc gửi email cảnh báo đặc biệt.
+    """
+    if session.get('role') not in ['admin', 'employee']: return jsonify([]), 403
+
+    # Sử dụng MongoDB Aggregation để gom nhóm và tính tổng nợ theo user
+    pipeline = [
+        # Lọc các giao dịch chưa trả tiền phạt hoặc đang quá hạn
+        {'$match': {
+            '$or': [
+                {'fine_paid': False, 'fine': {'$gt': 0}},
+                {'status': 'borrowing', 'due_date': {'$lt': datetime.now()}}
+            ]
+        }},
+        # Gom nhóm theo user_id
+        {'$group': {
+            '_id': '$user_id',
+            'total_unpaid_fine': {'$sum': {'$cond': [{'$eq': ['$fine_paid', False]}, '$fine', 0]}},
+            'overdue_books_count': {'$sum': {'$cond': [{'$eq': ['$status', 'borrowing']}, 1, 0]}}
+        }},
+        # Lọc ra những người nợ trên 20.000đ hoặc đang quá hạn từ 2 cuốn trở lên
+        {'$match': {
+            '$or': [
+                {'total_unpaid_fine': {'$gte': 20000}},
+                {'overdue_books_count': {'$gte': 2}}
+            ]
+        }},
+        {'$sort': {'total_unpaid_fine': -1}}
+    ]
+
+    risky_users_data = list(db.transactions.aggregate(pipeline))
+
+    # Kết hợp thông tin từ bảng users
+    result = []
+    for u in risky_users_data:
+        user_info = db.users.find_one({'_id': ObjectId(u['_id'])})
+        if user_info:
+            result.append({
+                'msv': user_info.get('msv', 'N/A'),
+                'fullname': user_info.get('fullname', 'N/A'),
+                'total_fine': u['total_unpaid_fine'],
+                'overdue_books': u['overdue_books_count'],
+                'warning_count': user_info.get('warning_count', 0)
+            })
+
+    return jsonify(result)
 # --- API AUTHENTICATION ---
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -47,47 +564,51 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    # Tìm user
-    user = db.users.find_one({'$or': [{'username': username}, {'msv': username}]})
+    if not username or not password:
+        return jsonify({'status': 'error', 'message': 'Vui lòng nhập đầy đủ thông tin!'}), 400
 
+    # Tìm user trong database
+    user = db.users.find_one({'username': username})
     if not user:
         return jsonify({'status': 'error', 'message': 'Tài khoản không tồn tại!'}), 404
 
-    # 1. Kiểm tra xem có bị khóa không
-    if user.get('lock_until') and user['lock_until'] > datetime.now():
-        lock_time = user['lock_until'].strftime("%H:%M:%S")
-        return jsonify({'status': 'error', 'message': f'Tài khoản bị khóa đến {lock_time} do nhập sai quá 5 lần!'}), 403
+    # Kiểm tra tài khoản có bị khóa do nhập sai nhiều lần không
+    if user.get('locked_until') and user['locked_until'] > datetime.now():
+        return jsonify({'status': 'error', 'message': 'Tài khoản đang bị khóa tạm thời. Vui lòng thử lại sau!'}), 403
 
-    # 2. Kiểm tra mật khẩu
+    # Kiểm tra mật khẩu
     if check_password_hash(user['password'], password):
-        # Đăng nhập thành công -> Reset số lần sai
-        db.users.update_one({'_id': user['_id']}, {
-            '$set': {'failed_attempts': 0, 'lock_until': None}
-        })
+        # Đăng nhập thành công -> Reset số lần đăng nhập sai
+        db.users.update_one({'_id': user['_id']}, {'$set': {'failed_attempts': 0, 'locked_until': None}})
 
+        # Lưu thông tin vào phiên làm việc (Session)
         session['user_id'] = str(user['_id'])
-        session['role'] = user['role']
-        session['fullname'] = user['fullname']
+        session['fullname'] = user.get('fullname', username)
+        session['role'] = user.get('role', 'user')
+
+        # CHỐT CHẶN QUAN TRỌNG: Xác định trang đích để Frontend chuyển hướng
+        target_url = '/'
+        if user['role'] in ['admin', 'employee']:
+            target_url = '/admin'
 
         return jsonify({
             'status': 'success',
+            'message': 'Đăng nhập thành công!',
             'role': user['role'],
-            'redirect': '/admin' if user['role'] == 'admin' else '/'
+            'redirect': target_url  # Trả về link để Javascript tự động chuyển trang
         })
     else:
-        # Nhập sai -> Tăng số lần sai
-        attempts = user.get('failed_attempts', 0) + 1
-        update_data = {'failed_attempts': attempts}
-        msg = f'Sai mật khẩu! ({attempts}/5)'
+        # Đăng nhập thất bại -> Tăng số lần sai
+        failed_attempts = user.get('failed_attempts', 0) + 1
+        update_data = {'failed_attempts': failed_attempts}
 
-        # Nếu sai 5 lần -> Khóa 5 phút
-        if attempts >= 5:
-            lock_time = datetime.now() + timedelta(minutes=5)
-            update_data['lock_until'] = lock_time
-            msg = 'Sai quá 5 lần! Tài khoản bị khóa 5 phút.'
+        # Nếu sai 5 lần thì khóa 15 phút
+        if failed_attempts >= 5:
+            update_data['locked_until'] = datetime.now() + timedelta(minutes=15)
 
         db.users.update_one({'_id': user['_id']}, {'$set': update_data})
-        return jsonify({'status': 'error', 'message': msg}), 401
+
+        return jsonify({'status': 'error', 'message': 'Sai mật khẩu!'}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
@@ -96,12 +617,12 @@ def logout():
 
 @app.route('/admin/circulation')
 def admin_circulation():
-    if session.get('role') != 'admin': return redirect('/')
+    if session.get('role') not in ['admin', 'employee']: return redirect('/')
     return render_template('admin_circulation.html')
 # --- ROUTING MỚI CHO PHẦN 2 ---
 @app.route('/admin/users')
 def admin_users():
-    if session.get('role') != 'admin': return redirect('/')
+    if session.get('role') not in ['admin', 'employee']: return redirect('/')
     return render_template('admin_users.html')
 
 
@@ -114,25 +635,39 @@ def user_profile():
 # --- API QUẢN LÝ ĐỘC GIẢ (ADMIN) ---
 @app.route('/api/admin/users', methods=['GET'])
 def get_users():
-    if session.get('role') != 'admin': return jsonify([]), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify([]), 403
 
-    # Lấy danh sách user (trừ admin)
-    users = list(db.users.find({'role': 'user'}, {'password': 0}))
+    q = request.args.get('q', '')
+    page = int(request.args.get('page', 1))
+    limit = 12
+    skip = (page - 1) * limit
 
-    # Tính toán thông tin bổ sung (Sách đang mượn, nợ phạt) cho từng user
+    query = {'role': 'user'}
+    if q:
+        query['$or'] = [
+            {'fullname': {'$regex': q, '$options': 'i'}},
+            {'msv': {'$regex': q, '$options': 'i'}},
+            {'email': {'$regex': q, '$options': 'i'}}
+        ]
+
+    total_items = db.users.count_documents(query)
+    users = list(db.users.find(query, {'password': 0}).skip(skip).limit(limit))
+
     for u in users:
         u['_id'] = str(u['_id'])
         u['borrow_count'] = db.transactions.count_documents({'user_id': str(u['_id']), 'status': 'borrowing'})
-        # Tính tổng tiền phạt chưa đóng (giả lập logic đơn giản)
-        # Thực tế cần tính từ collection 'fines' hoặc tương tự
-        u['total_fine'] = 0
+        u['total_fine'] = 0  # Có thể bổ sung logic tính tổng nợ nếu cần
 
-    return jsonify(users)
+    return jsonify({
+        'data': users,
+        'total_pages': (total_items + limit - 1) // limit,
+        'current_page': page
+    })
 
 
 @app.route('/api/admin/user', methods=['POST'])
 def create_user():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
     data = request.json
 
     # Kiểm tra trùng MSV hoặc Username
@@ -155,7 +690,7 @@ def create_user():
 
 @app.route('/api/admin/user/<uid>/reset-pass', methods=['POST'])
 def reset_pass(uid):
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
 
     # Reset mật khẩu về 123456
     db.users.update_one({'_id': ObjectId(uid)}, {'$set': {'password': generate_password_hash('123456')}})
@@ -199,9 +734,12 @@ def change_pass():
 @app.route('/api/books', methods=['GET'])
 def get_books():
     q = request.args.get('q', '')
+    page = int(request.args.get('page', 1))
+    limit = 12
+    skip = (page - 1) * limit
+
     query = {}
     if q:
-        # SỬA: Dùng $or để tìm trong cả title, author và isbn
         query = {
             '$or': [
                 {'title': {'$regex': q, '$options': 'i'}},
@@ -210,9 +748,14 @@ def get_books():
             ]
         }
 
-    books = list(db.books.find(query, {'_id': 0}))
-    return jsonify(books)
+    total_items = db.books.count_documents(query)
+    books = list(db.books.find(query, {'_id': 0}).skip(skip).limit(limit))
 
+    return jsonify({
+        'data': books,
+        'total_pages': (total_items + limit - 1) // limit,
+        'current_page': page
+    })
 
 @app.route('/api/book/<isbn>', methods=['GET'])
 def get_book_detail(isbn):
@@ -227,7 +770,7 @@ def get_book_detail(isbn):
 
 @app.route('/api/admin/book', methods=['POST'])
 def add_book():
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'employee']:
         return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
 
     data = request.json
@@ -244,17 +787,16 @@ def add_book():
         'category': data.get('category'),
         'publisher': data.get('publisher'),
         'year': data.get('year'),
-        'price': int(data.get('price', 0) or 0), # Chuyển về số nguyên
+        'price': int(data.get('price', 0) or 0),
         'language': data.get('language'),
         'location': data.get('location'),
-        'image_url': data.get('image_url'),      # <--- MỚI: Lưu link ảnh
+        'image_url': data.get('image_url'),
         'qty_total': qty,
         'qty_avail': qty,
         'created_at': datetime.now()
     }
     db.books.insert_one(new_book)
 
-    # Tạo bản lưu (Copies)
     copies = []
     for i in range(qty):
         copies.append({
@@ -266,23 +808,52 @@ def add_book():
     if copies:
         db.book_copies.insert_many(copies)
 
+    # ---> LOGIC MIS: Ghi Log Nhân sự
+    log_admin_action('THÊM_SÁCH', f"Thêm {qty} cuốn '{data.get('title')}' (ISBN: {isbn})")
+
+    # ---> LOGIC MIS: Ghi nhận Chi phí Tài chính (Nếu sách có nhập giá tiền)
+    total_cost = int(data.get('price', 0)) * qty
+    if total_cost > 0:
+        db.expenses.insert_one({
+            'amount': total_cost,
+            'category': 'book_purchase',
+            'description': f"Nhập {qty} cuốn '{data.get('title')}'",
+            'recorded_by': session.get('fullname'),
+            'date': datetime.now()
+        })
+
     return jsonify({'status': 'success', 'message': 'Thêm sách thành công'})
 @app.route('/api/admin/book/<isbn>', methods=['DELETE'])
 def delete_book(isbn):
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'employee']:
         return jsonify({'status': 'error', 'message': 'Unauthorized'}), 403
 
-    # Kiểm tra xem có bản sao nào đang được mượn không
     if db.book_copies.find_one({'isbn_ref': isbn, 'status': 'borrowed'}):
         return jsonify({'status': 'error', 'message': 'Không thể xóa: Có bản lưu đang được mượn!'}), 400
 
-    # Xóa đầu sách và toàn bộ bản sao
+    # 1. TRÍCH XUẤT OLD_VALUES TRƯỚC KHI XÓA
+    book_to_delete = db.books.find_one({'isbn': isbn})
+    if not book_to_delete:
+        return jsonify({'status': 'error', 'message': 'Không tìm thấy sách!'}), 404
+
+    book_title = book_to_delete['title']
+    doc_id = book_to_delete['_id']
+
+    # 2. Thực hiện hành động xóa
     db.books.delete_one({'isbn': isbn})
     db.book_copies.delete_many({'isbn_ref': isbn})
 
+    # 3. GHI LOG KIỂM TOÁN VỚI DỮ LIỆU CŨ
+    log_admin_action(
+        action_type='XÓA_SÁCH',
+        details=f"Xóa đầu sách: '{book_title}' (ISBN: {isbn})",
+        collection_name='books',
+        document_id=doc_id,
+        old_values=book_to_delete, # Lưu lại toàn bộ cục data của cuốn sách vừa bốc hơi
+        new_values=None            # Bị xóa nên không có giá trị mới
+    )
+
     return jsonify({'status': 'success', 'message': 'Đã xóa sách'})
-
-
 # --- API NGHIỆP VỤ MƯỢN - TRẢ - GIA HẠN (ADMIN) ---
 
 # 1. API Tìm kiếm Độc giả (Cho autocomplete)
@@ -328,7 +899,7 @@ def check_book_barcode(barcode):
 # Tìm hàm @app.route('/api/admin/borrow', methods=['POST']) và THAY THẾ TOÀN BỘ nội dung hàm bằng:
 @app.route('/api/admin/borrow', methods=['POST'])
 def admin_borrow():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
     data = request.json
     user_id = data.get('user_id')
     barcodes = data.get('barcodes', [])
@@ -406,7 +977,7 @@ def get_user_loans(uid):
 # 6. API Gia hạn sách
 @app.route('/api/admin/renew', methods=['POST'])
 def renew_book():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
     trans_id = request.json.get('trans_id')
 
     trans = db.transactions.find_one({'_id': ObjectId(trans_id)})
@@ -468,7 +1039,7 @@ def borrow_book():
 # --- Cập nhật API Thống kê tổng quan (Dashboard Cards) ---
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
 
     # 1. Tính tổng doanh thu thực tế từ bảng 'fines'
     # Chỉ tính những phiếu có status = 'paid'
@@ -674,14 +1245,14 @@ def user_renew():
 # --- ROUTE MỚI ---
 @app.route('/admin/fines')
 def admin_fines():
-    if session.get('role') != 'admin': return redirect('/')
+    if session.get('role') not in ['admin', 'employee']: return redirect('/')
     return render_template('admin_fines.html')
 
 
 # --- Cập nhật API lấy dữ liệu Biểu đồ (Sử dụng số liệu thật) ---
 @app.route('/api/admin/chart-data', methods=['GET'])
 def get_chart_data():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
 
     # 1. BIỂU ĐỒ TRÒN (PIE): Tình trạng sách
     # Đếm số lượng thực tế từ DB
@@ -753,7 +1324,7 @@ def get_chart_data():
 
 @app.route('/api/admin/book/add-copy', methods=['POST'])
 def add_book_copy():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
 
     data = request.json
     isbn = data.get('isbn')
@@ -789,7 +1360,7 @@ def add_book_copy():
 
 @app.route('/api/admin/book/copy/<barcode>', methods=['DELETE'])
 def delete_book_copy(barcode):
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
 
     # Kiểm tra trạng thái sách
     copy = db.book_copies.find_one({'barcode': barcode})
@@ -813,71 +1384,407 @@ def delete_book_copy(barcode):
 
 @app.route('/api/admin/fines', methods=['GET'])
 def get_fines_list():
-    if session.get('role') != 'admin': return jsonify([]), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify([]), 403
 
-    # Lấy danh sách từ collection 'fines'
-    # Sắp xếp: Chưa thanh toán lên đầu, sau đó đến ngày tạo mới nhất
-    fines = list(db.fines.find({}).sort([('status', 1), ('created_at', -1)]))
+    # Lấy tham số tìm kiếm và phân trang từ request
+    q = request.args.get('q', '').lower()
+    page = int(request.args.get('page', 1))
+    limit = 12
 
-    result = []
-    for f in fines:
+    all_fines = []
+
+    # 1. LẤY NỢ TỪ GIAO DỊCH TRỄ HẠN TỰ ĐỘNG (BẢNG transactions)
+    transactions_with_fines = list(db.transactions.find({'fine': {'$gt': 0}}))
+    for t in transactions_with_fines:
+        user = db.users.find_one({'_id': ObjectId(t['user_id'])})
+        all_fines.append({
+            '_id': str(t['_id']),
+            'type': 'transaction',  # Đánh dấu nguồn gốc để lúc thu tiền xử lý cho đúng
+            'user_name': user['fullname'] if user else 'Khách',
+            'user_msv': user['msv'] if user else 'N/A',
+            'amount': t.get('fine', 0),
+            'reason': 'overdue',
+            'description': f"Trễ hạn sách: {t.get('book_title', '')}",
+            'status': 'paid' if t.get('fine_paid') else 'unpaid',
+            'created_at': t.get('return_date', t.get('borrow_date')).strftime('%d/%m/%Y'),
+            'is_paid': t.get('fine_paid', False)
+        })
+
+    # 2. LẤY NỢ TỪ PHIẾU PHẠT THỦ CÔNG (BẢNG fines)
+    manual_fines = list(db.fines.find({}))
+    for f in manual_fines:
         f['_id'] = str(f['_id'])
+        f['type'] = 'manual'  # Đánh dấu nguồn gốc
         f['created_at'] = f['created_at'].strftime('%d/%m/%Y')
-        # Format trạng thái
         f['is_paid'] = (f.get('status') == 'paid')
-        result.append(f)
+        all_fines.append(f)
 
-    return jsonify(result)
+    # 3. LỌC DỮ LIỆU TÌM KIẾM (Search)
+    filtered_fines = []
+    if q:
+        for f in all_fines:
+            # Tìm từ khóa không phân biệt hoa thường trong Tên, MSV hoặc Nội dung phạt
+            if (q in str(f.get('user_name', '')).lower() or
+                    q in str(f.get('user_msv', '')).lower() or
+                    q in str(f.get('description', '')).lower()):
+                filtered_fines.append(f)
+    else:
+        filtered_fines = all_fines
+
+    # 4. SẮP XẾP LẠI: Đưa các khoản "Chưa thanh toán" (unpaid) lên đầu tiên
+    filtered_fines.sort(key=lambda x: (x['is_paid'], -int(x['_id'][:8], 16) if len(x['_id']) == 24 else 0))
+
+    # 5. XỬ LÝ PHÂN TRANG (Pagination)
+    total_items = len(filtered_fines)
+    total_pages = (total_items + limit - 1) // limit
+
+    # Dùng List Slicing để lấy đúng 12 item cho trang hiện tại
+    skip = (page - 1) * limit
+    paginated_data = filtered_fines[skip: skip + limit]
+
+    # Trả về format chuẩn để JS xử lý được phân trang
+    return jsonify({
+        'data': paginated_data,
+        'total_pages': total_pages,
+        'current_page': page
+    })
 
 
 @app.route('/api/admin/fine/create', methods=['POST'])
 def create_manual_fine():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
     data = request.json
 
     user_id = data.get('user_id')
     amount = int(data.get('amount', 0))
-    reason = data.get('reason')  # 'damaged', 'lost', 'other'
+    reason = data.get('reason')
     note = data.get('note', '')
 
-    if not user_id or amount <= 0:
-        return jsonify({'status': 'error', 'message': 'Dữ liệu không hợp lệ!'}), 400
+    if not user_id or amount <= 0: return jsonify({'status': 'error', 'message': 'Dữ liệu không hợp lệ!'}), 400
 
     user = db.users.find_one({'_id': ObjectId(user_id)})
     if not user: return jsonify({'status': 'error', 'message': 'Không tìm thấy độc giả!'}), 404
 
-    # Tạo phiếu phạt
     new_fine = {
         'user_id': user_id,
         'user_name': user['fullname'],
         'user_msv': user['msv'],
         'amount': amount,
-        'reason': reason,  # 'damaged', 'lost', 'manual'
+        'reason': reason,
         'description': note,
-        'status': 'unpaid',  # unpaid / paid
+        'status': 'unpaid',
         'created_at': datetime.now()
     }
 
-    db.fines.insert_one(new_fine)
+    # 1. Chèn vào DB
+    insert_result = db.fines.insert_one(new_fine)
+
+    # Lấy _id vừa tạo gán vào dict để ghi log
+    new_fine['_id'] = insert_result.inserted_id
+
+    # 2. GHI LOG KIỂM TOÁN DỮ LIỆU VỪA SINH RA
+    log_admin_action(
+        action_type='TẠO_PHIẾU_PHẠT',
+        details=f"Phạt {new_fine['user_name']} số tiền {amount:,.0f}đ",
+        collection_name='fines',
+        document_id=insert_result.inserted_id,
+        old_values=None,  # Mới tạo nên không có giá trị cũ
+        new_values=new_fine  # Lưu lại nguyên văn phiếu phạt vừa sinh ra
+    )
+
     return jsonify({'status': 'success', 'message': 'Đã lập phiếu phạt thành công!'})
 
 
 @app.route('/api/admin/pay-fine', methods=['POST'])
 def pay_fine():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
-    fine_id = request.json.get('id')
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
 
-    db.fines.update_one({'_id': ObjectId(fine_id)}, {
-        '$set': {'status': 'paid', 'payment_date': datetime.now()}
+    record_id = request.json.get('id')
+    user_id_to_check = None
+    amount_collected = 0
+
+    old_record = None
+    new_record = None
+    collection_impacted = None
+
+    # Tìm ở bảng transactions trước
+    trans = db.transactions.find_one({'_id': ObjectId(record_id)})
+    if trans:
+        old_record = copy.deepcopy(trans)
+        collection_impacted = 'transactions'
+
+        db.transactions.update_one({'_id': ObjectId(record_id)}, {
+            '$set': {'fine_paid': True, 'payment_date': datetime.now()}
+        })
+
+        # Lấy record sau khi đã update
+        new_record = db.transactions.find_one({'_id': ObjectId(record_id)})
+
+        user_id_to_check = trans['user_id']
+        amount_collected = trans.get('fine', 0)
+    else:
+        fine = db.fines.find_one({'_id': ObjectId(record_id)})
+        if fine:
+            old_record = copy.deepcopy(fine)
+            collection_impacted = 'fines'
+
+            db.fines.update_one({'_id': ObjectId(record_id)}, {
+                '$set': {'status': 'paid'}
+            })
+
+            new_record = db.fines.find_one({'_id': ObjectId(record_id)})
+
+            user_id_to_check = fine['user_id']
+            amount_collected = fine.get('amount', 0)
+        else:
+            return jsonify({'status': 'error', 'message': 'Không tìm thấy khoản nợ này!'}), 404
+
+    # Logic xóa cảnh báo user...
+    if user_id_to_check:
+        remaining_debt_trans = db.transactions.count_documents({'user_id': user_id_to_check,
+                                                                '$or': [{'fine_paid': False, 'fine': {'$gt': 0}},
+                                                                        {'status': 'borrowing',
+                                                                         'due_date': {'$lt': datetime.now()}}]})
+        remaining_debt_fines = db.fines.count_documents({'user_id': user_id_to_check, 'status': 'unpaid'})
+        if remaining_debt_trans == 0 and remaining_debt_fines == 0:
+            db.users.update_one({'_id': ObjectId(user_id_to_check)}, {'$set': {'warning_count': 0}})
+
+    # GHI LOG KIỂM TOÁN THU TIỀN (So sánh Before / After)
+    log_admin_action(
+        action_type='THU_TIỀN',
+        details=f"Xác nhận thu {amount_collected:,.0f}đ tiền phạt (ID: {record_id})",
+        collection_name=collection_impacted,
+        document_id=record_id,
+        old_values=old_record,
+        new_values=new_record
+    )
+
+    return jsonify({'status': 'success', 'message': 'Đã xác nhận thu tiền và cập nhật trạng thái!'})
+# =====================================================================
+# --- PHÂN HỆ MIS CHỨC NĂNG: TÀI CHÍNH (FINANCIAL MIS) ---
+# =====================================================================
+
+@app.route('/api/admin/finance/add-expense', methods=['POST'])
+def add_expense():
+    """Ghi nhận khoản chi mới (Mua sách, bảo trì, v.v...)"""
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
+    data = request.json
+
+    new_expense = {
+        'amount': int(data.get('amount', 0)),
+        'category': data.get('category'),  # 'book_purchase', 'maintenance', 'salary', 'other'
+        'description': data.get('description', ''),
+        'recorded_by': session.get('fullname'),
+        'date': datetime.now()
+    }
+
+    if new_expense['amount'] > 0:
+        db.expenses.insert_one(new_expense)
+        # Tự động ghi log nhân sự (Ai đã chi tiền)
+        log_admin_action("CHI_TIỀN", f"Chi {new_expense['amount']:,.0f}đ cho: {new_expense['description']}")
+        return jsonify({'status': 'success', 'message': 'Đã ghi nhận khoản chi.'})
+    return jsonify({'status': 'error', 'message': 'Số tiền không hợp lệ.'}), 400
+
+
+@app.route('/api/admin/finance/report', methods=['GET'])
+def get_financial_report():
+    """Báo cáo Thu - Chi tổng thể"""
+    if session.get('role') not in ['admin', 'employee']: return jsonify({}), 403
+
+    # 1. TỔNG THU (Từ tiền phạt đã đóng)
+    # Lấy từ transactions
+    trans_income = list(db.transactions.aggregate([
+        {'$match': {'fine_paid': True, 'fine': {'$gt': 0}}},
+        {'$group': {'_id': None, 'total': {'$sum': '$fine'}}}
+    ]))
+    # Lấy từ fines (Phiếu thủ công)
+    manual_income = list(db.fines.aggregate([
+        {'$match': {'status': 'paid'}},
+        {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+    ]))
+    total_income = (trans_income[0]['total'] if trans_income else 0) + (
+        manual_income[0]['total'] if manual_income else 0)
+
+    # 2. TỔNG CHI (Từ bảng expenses)
+    expense_result = list(db.expenses.aggregate([
+        {'$group': {'_id': None, 'total': {'$sum': '$amount'}}}
+    ]))
+    total_expense = expense_result[0]['total'] if expense_result else 0
+
+    # 3. LỢI NHUẬN RÒNG (ROI)
+    net_profit = total_income - total_expense
+
+    return jsonify({
+        'total_income': total_income,
+        'total_expense': total_expense,
+        'net_profit': net_profit,
+        'status': 'Lãi' if net_profit >= 0 else 'Lỗ'
     })
-    return jsonify({'status': 'success', 'message': 'Đã thu tiền thành công!'})
 
 
+# =====================================================================
+# --- PHÂN HỆ MIS CHỨC NĂNG: NHÂN SỰ & KIỂM TOÁN (HR & AUDIT MIS) ---
+# =====================================================================
+
+def log_admin_action(action_type, details, collection_name=None, document_id=None, old_values=None, new_values=None):
+    """
+    Hàm lưu vết kiểm toán (Audit Trail) nâng cao chống gian lận.
+    Lưu ý: Cần import copy ở đầu file app.py nếu chưa có.
+    """
+    try:
+        # Clone dữ liệu để tránh reference lỗi khi biến đổi ObjectId thành chuỗi
+        old_data = copy.deepcopy(old_values) if old_values else None
+        new_data = copy.deepcopy(new_values) if new_values else None
+
+        # Format lại ObjectId thành string để có thể lưu mượt mà hoặc jsonify sau này
+        if old_data and '_id' in old_data: old_data['_id'] = str(old_data['_id'])
+        if new_data and '_id' in new_data: new_data['_id'] = str(new_data['_id'])
+
+        audit_record = {
+            'admin_id': session.get('user_id'),
+            'admin_name': session.get('fullname', 'Unknown'),
+            'action_type': action_type,
+            'details': details,
+            'collection': collection_name,       # Bảng nào bị tác động (books, fines...)
+            'document_id': str(document_id) if document_id else None, # ID của dòng dữ liệu
+            'old_values': old_data,              # Dữ liệu GỐC trước khi bị tác động
+            'new_values': new_data,              # Dữ liệu MỚI sau khi bị tác động
+            'timestamp': datetime.now()
+        }
+        db.audit_logs.insert_one(audit_record)
+    except Exception as e:
+        print("Lỗi ghi Audit Log:", e)
+
+
+@app.route('/api/admin/hr/audit-logs', methods=['GET'])
+def get_audit_logs():
+    """Lấy lịch sử thao tác của nhân viên thư viện"""
+    if session.get('role') != 'admin': return jsonify([]), 403
+
+    # Lấy 100 log gần nhất
+    logs = list(db.audit_logs.find({}).sort('timestamp', -1).limit(100))
+    for log in logs:
+        log['_id'] = str(log['_id'])
+        log['time_fmt'] = log['timestamp'].strftime('%H:%M:%S %d/%m/%Y')
+
+    return jsonify(logs)
+
+
+@app.route('/api/admin/hr/kpi', methods=['GET'])
+def get_admin_kpi():
+    """Thống kê KPI (Hiệu suất làm việc) của từng Admin"""
+    if session.get('role') != 'admin': return jsonify([]), 403
+
+    # Đếm số lượng thao tác của mỗi Admin trong tháng này
+    pipeline = [
+        {'$match': {'timestamp': {'$gte': datetime.now() - timedelta(days=30)}}},
+        {'$group': {
+            '_id': '$admin_name',
+            'total_actions': {'$sum': 1},
+            # Có thể phân loại sâu hơn (Ví dụ: Đếm số lần thu tiền, đếm số sách thêm mới)
+        }},
+        {'$sort': {'total_actions': -1}}
+    ]
+
+    kpi_data = list(db.audit_logs.aggregate(pipeline))
+    return jsonify(kpi_data)
+# --- API DSS: WHAT-IF ANALYSIS (MÔ PHỎNG KỊCH BẢN) ---
+@app.route('/api/admin/dss/what-if', methods=['POST'])
+def dss_what_if():
+    if session.get('role') not in ['admin', 'employee']: return jsonify({}), 403
+
+    data = request.json
+    new_max_days = int(data.get('max_days', 14))
+    new_fine_rate = int(data.get('fine_rate', 1000))
+    period = data.get('period', 'all')  # Nhận mốc thời gian từ Frontend
+
+    # 1. Lọc giao dịch theo mốc thời gian
+    match_stage = {'status': 'returned'}  # Giả lập trên các đơn đã hoàn tất
+    if period != 'all':
+        now = datetime.now()
+        if period == 'month':
+            start_date = now - timedelta(days=30)
+        elif period == 'quarter':
+            start_date = now - timedelta(days=90)
+        elif period == 'year':
+            start_date = now - timedelta(days=365)
+        else:
+            start_date = None
+        if start_date: match_stage['borrow_date'] = {'$gte': start_date}
+
+    transactions = list(db.transactions.find(match_stage))
+
+    # 2. Tính toán doanh thu thực tế vs Doanh thu giả lập
+    actual_revenue = 0
+    projected_revenue = 0
+
+    for t in transactions:
+        actual_revenue += t.get('fine', 0)
+
+        # Giả lập: Tính số ngày mượn thực tế
+        borrow_date = t.get('borrow_date')
+        return_date = t.get('return_date')
+        if not borrow_date or not return_date: continue
+
+        borrow_duration = (return_date - borrow_date).days
+
+        # Nếu số ngày mượn vượt quá quy định MỚI -> Bị phạt theo mức MỚI
+        if borrow_duration > new_max_days:
+            overdue_days = borrow_duration - new_max_days
+            projected_revenue += overdue_days * new_fine_rate
+
+    # 3. Tính % thay đổi
+    diff_percent = 0
+    if actual_revenue > 0:
+        diff_percent = round(((projected_revenue - actual_revenue) / actual_revenue) * 100, 1)
+    elif projected_revenue > 0:
+        diff_percent = 100  # Tăng từ 0 lên có tiền
+
+    return jsonify({
+        'projected_revenue': projected_revenue,
+        'diff_percent': diff_percent,
+        'baseline_revenue': actual_revenue
+    })
+# --- API DSS: DRILL-DOWN (ĐÀO SÂU DỮ LIỆU BIỂU ĐỒ) ---
+@app.route('/api/admin/dss/drilldown', methods=['GET'])
+def dss_drilldown():
+    """
+    Phân tích Drill-down: Trả về Top 5 sách mượn nhiều nhất của một thể loại cụ thể.
+    """
+    if session.get('role') not in ['admin', 'employee']: return jsonify([]), 403
+    category = request.args.get('category')
+
+    pipeline = [
+        {'$match': {'status': {'$in': ['borrowing', 'returned']}}},
+        {'$lookup': {
+            'from': 'books',
+            'localField': 'book_title',
+            'foreignField': 'title',
+            'as': 'book_info'
+        }},
+        {'$unwind': '$book_info'},
+        # Lọc đúng thể loại Admin click vào
+        {'$match': {'book_info.category': category}},
+        {'$group': {
+            '_id': '$book_title',
+            'borrow_count': {'$sum': 1}
+        }},
+        {'$sort': {'borrow_count': -1}},
+        {'$limit': 5}  # Chỉ lấy Top 5
+    ]
+
+    drilldown_data = list(db.transactions.aggregate(pipeline))
+
+    # Format lại dữ liệu trả về Frontend
+    return jsonify([
+        {'title': d['_id'], 'count': d['borrow_count']}
+        for d in drilldown_data
+    ])
 # --- CẬP NHẬT LẠI HÀM TRẢ SÁCH (admin_return) ĐỂ TỰ ĐỘNG TẠO PHẠT ---
 # Tìm hàm admin_return cũ và thay thế bằng hàm này
 @app.route('/api/admin/return', methods=['POST'])
 def admin_return():
-    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    if session.get('role') not in ['admin', 'employee']: return jsonify({'status': 'error'}), 403
     barcode = request.json.get('barcode')
 
     trans = db.transactions.find_one({'barcode': barcode, 'status': 'borrowing'})
@@ -926,5 +1833,75 @@ def admin_return():
         'fine': fine_amount,
         'overdue': overdue_days
     })
+
+
+# =====================================================================
+# --- PHÂN HỆ QUẢN LÝ NHÂN SỰ / NHÂN VIÊN (RBAC) ---
+# =====================================================================
+
+@app.route('/admin/employees')
+def admin_employees_page():
+    """Giao diện Quản lý Danh sách Nhân viên (Chỉ Admin mới được vào)"""
+    if session.get('role') != 'admin': return redirect('/')
+    return render_template('admin_employees.html')
+
+
+@app.route('/api/admin/employees', methods=['GET'])
+def get_employees():
+    """API lấy danh sách nhân viên và quản lý"""
+    if session.get('role') != 'admin': return jsonify([]), 403
+
+    # Lấy danh sách user có role là admin hoặc employee (bỏ qua sinh viên 'user')
+    staff = list(db.users.find({'role': {'$in': ['admin', 'employee']}}, {'password': 0}))
+    for s in staff:
+        s['_id'] = str(s['_id'])
+        s['created_at_fmt'] = s.get('created_at', datetime.now()).strftime('%d/%m/%Y')
+
+    return jsonify(staff)
+
+
+@app.route('/api/admin/employee', methods=['POST'])
+def create_employee():
+    """API Cấp tài khoản mới cho Nhân viên"""
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+    data = request.json
+
+    # Kiểm tra xem tên đăng nhập đã tồn tại chưa
+    if db.users.find_one({'username': data['username']}):
+        return jsonify({'status': 'error', 'message': 'Tên đăng nhập đã tồn tại!'}), 400
+
+    new_staff = {
+        "username": data['username'],
+        "password": generate_password_hash(data.get('password', '123456')),
+        "role": data['role'],  # 'admin' hoặc 'employee'
+        "fullname": data['fullname'],
+        "email": data.get('email', ''),
+        "created_at": datetime.now()
+    }
+
+    db.users.insert_one(new_staff)
+
+    # Ghi Audit Log tự động
+    log_admin_action('THÊM_NHÂN_SỰ', f"Tạo tài khoản {data['role']}: {data['username']}")
+
+    return jsonify({'status': 'success', 'message': 'Cấp tài khoản nhân sự thành công!'})
+
+
+@app.route('/api/admin/employee/<uid>', methods=['DELETE'])
+def delete_employee(uid):
+    """API Khóa/Xóa tài khoản nhân viên cũ"""
+    if session.get('role') != 'admin': return jsonify({'status': 'error'}), 403
+
+    # Không cho phép admin tự xóa chính mình
+    if uid == session.get('user_id'):
+        return jsonify({'status': 'error', 'message': 'Không thể tự xóa chính mình!'}), 400
+
+    user_to_del = db.users.find_one({'_id': ObjectId(uid)})
+    db.users.delete_one({'_id': ObjectId(uid)})
+
+    if user_to_del:
+        log_admin_action('XÓA_NHÂN_SỰ', f"Xóa/Thu hồi tài khoản: {user_to_del.get('username')}")
+
+    return jsonify({'status': 'success', 'message': 'Đã thu hồi quyền của nhân sự này!'})
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị Nhân sự - MIS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { admin: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', brand: '#6366f1' } } } }
+        }
+    </script>
+    <style>
+        .sidebar-active { background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, transparent 100%); border-left: 4px solid #6366f1; color: #818cf8; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-admin-900 text-slate-400 flex flex-col h-full shadow-xl z-20 shrink-0">
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-700/50 bg-admin-900">
+            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <i class="fas fa-book-open text-sm"></i>
+            </div>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin MIS</span>
+        </div>
+        <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600">
+            <div>
+                <p class="text-slate-200 text-sm font-bold">{{ session.get('fullname', 'Admin') }}</p>
+                <p class="text-xs text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</p>
+            </div>
+        </div>
+      <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS/DSS)</p>
+    <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
+    </a>
+
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
+    <a href="/admin/books" class="nav-item {{ 'sidebar-active' if request.path == '/admin/books' or request.path.startswith('/admin/book/') else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+    </a>
+    <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+    </a>
+    <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+    </a>
+    <a href="/admin/fines" class="nav-item {{ 'sidebar-active' if request.path == '/admin/fines' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+    </a>
+    <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+    </a>
+
+    {% if session.get('role') == 'admin' %}
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+    <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+    </a>
+    <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+    </a>
+    <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+    </a>
+    {% endif %}
+</nav>
+        <div class="p-4 border-t border-slate-700/50">
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden relative">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 z-10 shadow-sm shrink-0">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="fas fa-user-shield text-indigo-600"></i> Quản lý Nhân sự & Kiểm toán (HR MIS)
+            </h2>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 text-lg">
+                    <i class="fas fa-chart-line text-emerald-500"></i> KPI Hiệu suất làm việc (30 ngày qua)
+                </h3>
+                <div class="h-48 w-full">
+                    <canvas id="kpiChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-history text-indigo-500"></i> Lịch sử Thao tác Hệ thống (Audit Trail)
+                    </h3>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">100 bản ghi gần nhất</span>
+                </div>
+                <div class="p-0 overflow-y-auto flex-1 max-h-[400px]">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 sticky top-0 shadow-sm z-10">
+                            <tr>
+                                <th class="py-3 px-4 font-medium w-48">Thời gian</th>
+                                <th class="py-3 px-4 font-medium w-48">Nhân sự</th>
+                                <th class="py-3 px-4 font-medium w-48">Loại thao tác</th>
+                                <th class="py-3 px-4 font-medium">Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-logs-tbody" class="text-slate-700">
+                            <tr><td colspan="4" class="text-center py-6 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href = '/'; }
+
+        // MÀU SẮC ĐÁNH DẤU LOẠI THAO TÁC
+        const actionColors = {
+            'THÊM_SÁCH': 'bg-emerald-100 text-emerald-700',
+            'XÓA_SÁCH': 'bg-rose-100 text-rose-700',
+            'THU_TIỀN': 'bg-sky-100 text-sky-700',
+            'CHI_TIỀN': 'bg-orange-100 text-orange-700',
+            'DEFAULT': 'bg-slate-100 text-slate-600'
+        };
+
+        // 1. LOAD AUDIT LOGS
+        fetch('/api/admin/hr/audit-logs')
+            .then(r => r.json())
+            .then(data => {
+                const tbody = document.getElementById('audit-logs-tbody');
+                if(data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-400">Chưa có dữ liệu lịch sử thao tác.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(log => {
+                    const colorClass = actionColors[log.action_type] || actionColors['DEFAULT'];
+                    return `
+                        <tr class="border-b border-slate-50 hover:bg-slate-50">
+                            <td class="py-3 px-4 text-xs font-medium text-slate-500">${log.time_fmt}</td>
+                            <td class="py-3 px-4 font-bold text-slate-800">${log.admin_name}</td>
+                            <td class="py-3 px-4">
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-md ${colorClass}">${log.action_type}</span>
+                            </td>
+                            <td class="py-3 px-4 text-slate-600">${log.details}</td>
+                        </tr>
+                    `;
+                }).join('');
+            });
+
+        // 2. LOAD KPI CHART
+        fetch('/api/admin/hr/kpi')
+            .then(r => r.json())
+            .then(data => {
+                const labels = data.map(d => d._id);
+                const values = data.map(d => d.total_actions);
+
+                new Chart(document.getElementById('kpiChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Số lượng thao tác',
+                            data: values,
+                            backgroundColor: '#10b981', // emerald-500
+                            borderRadius: 6,
+                            barPercentage: 0.5
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            });
+    </script>
+</body>
+</html>

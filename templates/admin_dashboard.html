@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Trị Thư Viện</title>
+    <title>Hệ Thống Quản Trị Thư Viện - MIS Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -25,6 +25,8 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .pulse-border { animation: pulse-border 2s infinite; }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); } 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex overflow-hidden">
@@ -34,7 +36,7 @@
             <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center text-white shadow-lg">
                 <i class="fas fa-book-open text-sm"></i>
             </div>
-            <span class="text-white font-bold text-lg tracking-tight">LibAdmin</span>
+            <span class="text-white font-bold text-lg tracking-tight">LibAdmin MIS</span>
         </div>
 
         <div class="px-6 py-6 flex items-center gap-3 border-b border-slate-700/30">
@@ -45,26 +47,42 @@
             </div>
         </div>
 
-        <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Quản lý chung</p>
-            <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Dashboard
-            </a>
+      <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-3">
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Hỗ trợ ra quyết định (EIS/DSS)</p>
+    <a href="/admin" class="nav-item {{ 'sidebar-active' if request.path == '/admin' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-chart-pie w-5 text-center group-hover:scale-110 transition"></i> Bảng điều khiển
+    </a>
 
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
-            <a href="/admin/books" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
-            </a>
-            <a href="/admin/users" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
-            </a>
-            <a href="/admin/circulation" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
-            </a>
-             <a href="/admin/fines" class="nav-item hover:bg-slate-800 hover:text-slate-200 flex items-center gap-3 px-4 py-3 rounded-lg transition group">
-                <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
-            </a>
-        </nav>
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ (TPS)</p>
+    <a href="/admin/books" class="nav-item {{ 'sidebar-active' if request.path == '/admin/books' or request.path.startswith('/admin/book/') else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-book w-5 text-center group-hover:scale-110 transition"></i> Quản lý Sách
+    </a>
+    <a href="/admin/users" class="nav-item {{ 'sidebar-active' if request.path == '/admin/users' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-users w-5 text-center group-hover:scale-110 transition"></i> Quản lý Độc giả
+    </a>
+    <a href="/admin/circulation" class="nav-item {{ 'sidebar-active' if request.path == '/admin/circulation' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-sync-alt w-5 text-center group-hover:scale-110 transition"></i> Mượn - Trả Sách
+    </a>
+    <a href="/admin/fines" class="nav-item {{ 'sidebar-active' if request.path == '/admin/fines' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-file-invoice-dollar w-5 text-center group-hover:scale-110 transition"></i> Thu Phạt
+    </a>
+    <a href="/admin/oas/logs" class="nav-item {{ 'sidebar-active' if request.path == '/admin/oas/logs' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-envelope-open-text w-5 text-center group-hover:scale-110 transition"></i> Nhật ký gửi thư
+    </a>
+
+    {% if session.get('role') == 'admin' %}
+    <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Quản trị Hệ thống</p>
+    <a href="/admin/employees" class="nav-item {{ 'sidebar-active' if request.path == '/admin/employees' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-user-tie w-5 text-center group-hover:scale-110 transition"></i> Quản lý Nhân sự
+    </a>
+    <a href="/admin/finance" class="nav-item {{ 'sidebar-active' if request.path == '/admin/finance' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-money-bill-wave w-5 text-center group-hover:scale-110 transition"></i> Tài chính
+    </a>
+    <a href="/admin/hr" class="nav-item {{ 'sidebar-active' if request.path == '/admin/hr' else 'hover:bg-slate-800 hover:text-slate-200' }} flex items-center gap-3 px-4 py-3 rounded-lg transition group">
+        <i class="fas fa-shield-alt w-5 text-center group-hover:scale-110 transition"></i> Kiểm toán & KPI
+    </a>
+    {% endif %}
+</nav>
 
         <div class="p-4 border-t border-slate-700/50">
             <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-900/30 text-slate-300 hover:text-red-400 py-2.5 rounded-lg transition text-sm font-medium">
@@ -74,12 +92,16 @@
     </aside>
 
     <main class="flex-1 flex flex-col bg-slate-50 h-full overflow-hidden relative">
-        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 z-10 shadow-sm">
+        <header class="h-16 bg-white border-b border-slate-200 flex justify-between items-center px-6 z-10 shadow-sm shrink-0">
             <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <i class="fas fa-chart-pie text-indigo-600"></i> Thống kê & Báo cáo
+                <i class="fas fa-chart-line text-indigo-600"></i> Báo cáo & Phân tích (EIS/DSS)
             </h2>
             <div class="flex items-center gap-4">
-                <div class="relative">
+                <button onclick="openMassEmailModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-bold transition flex items-center gap-2 shadow-sm">
+                    <i class="fas fa-bullhorn"></i> Gửi thông báo toàn trường
+                </button>
+
+                <div class="relative ml-2">
                     <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
                     <input type="text" placeholder="Tìm kiếm nhanh..." class="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-64 transition hover:bg-white hover:shadow-sm">
                 </div>
@@ -87,71 +109,264 @@
         </header>
 
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 transition duration-300">
-                    <div class="absolute right-0 top-0 h-full w-1 bg-indigo-500"></div>
-                    <div>
-                        <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Tổng đầu sách</p>
-                        <h3 class="text-3xl font-bold text-slate-800" id="st-books">...</h3>
+
+            <div class="mb-2">
+                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fas fa-crown text-amber-500"></i> Chỉ số Điều hành Chiến lược (EIS KPIs)
+                </h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition duration-300 flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Tỷ lệ khai thác</p>
+                            <h3 class="text-3xl font-bold text-slate-800" id="kpi-util-val">0%</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500 text-xl">
+                            <i class="fas fa-book-reader"></i>
+                        </div>
                     </div>
-                    <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 text-2xl group-hover:scale-110 transition">
-                        <i class="fas fa-book"></i>
+                    <div class="mt-2">
+                        <div class="flex justify-between text-xs text-slate-400 font-medium mb-1">
+                            <span>Kho nhàn rỗi</span>
+                            <span>Lưu thông</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div id="kpi-util-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 transition duration-300">
-                    <div class="absolute right-0 top-0 h-full w-1 bg-emerald-500"></div>
-                    <div>
-                        <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Đang cho mượn</p>
-                        <h3 class="text-3xl font-bold text-slate-800" id="st-borrow">...</h3>
-                        <p class="text-slate-400 text-xs mt-2">Đang hoạt động</p>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition duration-300 flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Độc giả tích cực</p>
+                            <h3 class="text-3xl font-bold text-slate-800" id="kpi-active-val">0%</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500 text-xl">
+                            <i class="fas fa-users-rays"></i>
+                        </div>
                     </div>
-                    <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 text-2xl group-hover:scale-110 transition">
-                        <i class="fas fa-hand-holding-open"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 transition duration-300">
-                    <div class="absolute right-0 top-0 h-full w-1 bg-orange-500"></div>
-                    <div>
-                        <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Quá hạn trả</p>
-                        <h3 class="text-3xl font-bold text-slate-800" id="st-overdue">...</h3>
-                        <p class="text-red-500 text-xs font-bold mt-2">Cần xử lý gấp</p>
-                    </div>
-                    <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 text-2xl group-hover:scale-110 transition">
-                        <i class="fas fa-exclamation-circle"></i>
+                    <div class="mt-2">
+                        <p class="text-xs text-slate-400 font-medium mb-1">Sinh viên có mượn sách (30 ngày)</p>
+                        <div class="w-full bg-slate-100 rounded-full h-2">
+                            <div id="kpi-active-bar" class="bg-sky-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between relative overflow-hidden group hover:-translate-y-1 transition duration-300">
-                    <div class="absolute right-0 top-0 h-full w-1 bg-rose-500"></div>
-                    <div>
-                        <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Doanh thu phạt</p>
-                        <h3 class="text-3xl font-bold text-slate-800" id="st-rev">...</h3>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition duration-300 flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Tỷ lệ quá hạn</p>
+                            <h3 class="text-3xl font-bold text-slate-800 transition-colors" id="kpi-overdue-val">0%</h3>
+                        </div>
+                        <div id="kpi-overdue-icon-bg" class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-500 text-xl transition-colors">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
                     </div>
-                    <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 text-2xl group-hover:scale-110 transition">
-                        <i class="fas fa-file-invoice-dollar"></i>
+                    <div class="mt-2 flex items-center justify-between">
+                        <p class="text-xs text-slate-400 font-medium">Trạng thái rủi ro:</p>
+                        <div id="kpi-overdue-status">
+                            <span class="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded-full">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition duration-300 flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Thu hồi nợ phạt</p>
+                            <div class="flex flex-col mt-1">
+                                <span class="text-lg font-bold text-emerald-600 leading-tight" id="kpi-fin-paid">0đ <i class="fas fa-arrow-down text-xs"></i></span>
+                                <span class="text-sm font-bold text-rose-500 leading-tight mt-1" id="kpi-fin-unpaid">0đ <i class="fas fa-arrow-up text-xs"></i></span>
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 text-xl">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                    </div>
+                    <div class="mt-1">
+                        <div class="flex justify-between text-[10px] text-slate-400 font-bold mb-1 uppercase">
+                            <span class="text-emerald-500">Đã thu</span>
+                            <span class="text-rose-400">Nợ đọng</span>
+                        </div>
+                        <div class="w-full bg-rose-100 rounded-full h-2 flex overflow-hidden">
+                            <div id="kpi-fin-bar" class="bg-emerald-500 h-2 transition-all duration-1000" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-slate-800 mb-4">Thống kê doanh thu</h3>
-                    <div class="h-64 w-full">
-                        <canvas id="revenueChart"></canvas>
+
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-indigo-500"></i> Phân tích Xu hướng
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <select id="trend-period" onchange="loadTrendChart()" class="text-xs bg-white text-slate-600 border border-slate-200 px-2 py-1.5 rounded outline-none focus:ring-1 focus:ring-indigo-500 font-medium cursor-pointer shadow-sm">
+                                <option value="month">30 ngày qua</option>
+                                <option value="quarter">Quý gần nhất</option>
+                                <option value="year">1 năm qua</option>
+                                <option value="all" selected>Tất cả thời gian</option>
+                            </select>
+                            <span class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full border border-indigo-200 font-medium hidden sm:block">
+                                <i class="fas fa-mouse-pointer mr-1"></i> DSS Drill-down
+                            </span>
+                        </div>
+                    </div>
+                    <div class="h-64 w-full cursor-pointer">
+                        <canvas id="trendChart"></canvas>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-slate-800 mb-4">Tình trạng sách</h3>
-                    <div class="h-64 flex justify-center relative">
-                        <canvas id="statusChart"></canvas>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fas fa-sliders-h text-emerald-500"></i> Kịch bản What-If
+                        </h3>
+                        <select id="wi-period" class="text-[10px] bg-white text-slate-600 border border-slate-200 px-1 py-1 rounded outline-none focus:ring-1 focus:ring-emerald-500 font-medium cursor-pointer shadow-sm">
+                            <option value="month" selected>Baseline: 30 ngày</option>
+                            <option value="quarter">Baseline: Quý</option>
+                            <option value="year">Baseline: Năm</option>
+                            <option value="all">Baseline: Tất cả</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Thời gian mượn tối đa (Ngày)</label>
+                            <input type="range" id="wi-days" min="5" max="30" value="14" class="w-full accent-emerald-500" oninput="document.getElementById('wi-days-val').innerText = this.value">
+                            <div class="text-right text-sm font-bold text-slate-700 mt-1" id="wi-days-val">14</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Phí phạt trễ hạn (VNĐ/Ngày)</label>
+                            <input type="range" id="wi-fine" min="500" max="5000" step="500" value="1000" class="w-full accent-emerald-500" oninput="document.getElementById('wi-fine-val').innerText = parseInt(this.value).toLocaleString() + 'đ'">
+                            <div class="text-right text-sm font-bold text-slate-700 mt-1" id="wi-fine-val">1,000đ</div>
+                        </div>
+                        <button onclick="runWhatIf(event)" class="w-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold py-2 rounded-lg transition text-sm">
+                            <i class="fas fa-play mr-1"></i> Chạy mô phỏng
+                        </button>
+                    </div>
+
+                    <div id="wi-result" class="mt-4 pt-4 border-t border-slate-100 hidden">
+                        <div class="flex justify-between items-end mb-1">
+                            <p class="text-xs text-slate-500">Dự phóng Doanh thu Phạt:</p>
+                            <p class="text-[10px] text-slate-400" id="wi-baseline-txt"></p>
+                        </div>
+                        <h4 class="text-xl font-bold text-slate-800" id="wi-rev">0đ</h4>
+                        <p class="text-xs font-bold mt-1" id="wi-diff"></p>
                     </div>
                 </div>
             </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-slate-100 bg-rose-50/30 flex justify-between items-center shrink-0">
+                        <h3 class="font-bold text-rose-700 flex items-center gap-2">
+                            <i class="fas fa-user-shield"></i> Cảnh báo: Độc giả rủi ro cao
+                        </h3>
+                        <button onclick="window.location.href='/api/admin/dss/export/high-risk'" class="text-xs bg-white text-rose-600 border border-rose-200 px-3 py-1.5 rounded hover:bg-rose-50 transition font-medium shadow-sm">
+                            <i class="fas fa-file-export mr-1"></i> Xuất Excel
+                        </button>
+                    </div>
+                    <div class="p-0 overflow-y-auto flex-1 max-h-[300px]">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-3 px-4 font-medium">MSV</th>
+                                    <th class="py-3 px-4 font-medium">Họ tên</th>
+                                    <th class="py-3 px-4 font-medium">Tổng nợ phạt</th>
+                                    <th class="py-3 px-4 font-medium text-center">Đã nhắc</th>
+                                    <th class="py-3 px-4 font-medium text-right">Gửi Email</th>
+                                </tr>
+                            </thead>
+                            <tbody id="high-risk-tbody" class="text-slate-700">
+                                <tr><td colspan="5" class="text-center py-6 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-slate-100 bg-orange-50/30 flex justify-between items-center shrink-0">
+                        <h3 class="font-bold text-orange-700 flex items-center gap-2">
+                            <i class="fas fa-box-open"></i> Gợi ý: Sách ít tương tác
+                        </h3>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded hidden md:block">Cân nhắc thanh lý</span>
+                            <button onclick="window.location.href='/api/admin/dss/export/unused-books'" class="text-xs bg-white text-orange-600 border border-orange-200 px-3 py-1.5 rounded hover:bg-orange-50 transition font-medium shadow-sm">
+                                <i class="fas fa-file-export mr-1"></i> Xuất Excel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-0 overflow-y-auto flex-1 max-h-[300px]">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th class="py-3 px-4 font-medium">ISBN</th>
+                                    <th class="py-3 px-4 font-medium">Tên sách</th>
+                                    <th class="py-3 px-4 font-medium">Thể loại</th>
+                                    <th class="py-3 px-4 font-medium text-right">Tồn kho</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unused-books-tbody" class="text-slate-700">
+                                <tr><td colspan="4" class="text-center py-6 text-slate-400"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </main>
+
+    <div id="drilldownModal" class="fixed inset-0 bg-slate-900/50 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-indigo-50">
+                <h3 class="font-bold text-indigo-800 text-lg" id="modal-title">Top 5 Sách</h3>
+                <button onclick="closeModal('drilldownModal')" class="text-slate-400 hover:text-slate-700 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <ul id="drilldown-list" class="space-y-3">
+                    <li class="text-center text-slate-500"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="massEmailModal" class="fixed inset-0 bg-slate-900/60 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-indigo-600">
+                <h3 class="font-bold text-white text-lg"><i class="fas fa-bullhorn mr-2"></i>Gửi Thông báo Hàng loạt</h3>
+                <button onclick="closeModal('massEmailModal')" class="text-indigo-200 hover:text-white transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="bg-indigo-50 text-indigo-700 text-sm p-3 rounded-lg border border-indigo-100 flex items-start gap-3">
+                    <i class="fas fa-info-circle mt-0.5"></i>
+                    <p>Email này sẽ được gửi tới <b>tất cả sinh viên</b> có trong hệ thống bằng phương thức <b>BCC ẩn danh</b> để đảm bảo bảo mật thông tin.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Chủ đề (Subject)</label>
+                    <input type="text" id="mass-subject" placeholder="VD: Thư viện nghỉ lễ Quốc khánh 2/9..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nội dung thông báo (Content)</label>
+                    <textarea id="mass-content" rows="6" placeholder="Kính gửi các bạn độc giả..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button onclick="closeModal('massEmailModal')" class="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-200 rounded-lg transition">Hủy bỏ</button>
+                <button id="btn-send-mass" onclick="sendMassEmail(event)" class="px-5 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 shadow-md">
+                    <i class="fas fa-paper-plane"></i> Gửi Ngay
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         async function logout() {
@@ -159,45 +374,210 @@
             window.location.href = '/';
         }
 
-        // Fetch Data
-        fetch('/api/stats').then(r=>r.json()).then(d => {
-            document.getElementById('st-books').innerText = d.total_books;
-            document.getElementById('st-borrow').innerText = d.borrowing;
-            document.getElementById('st-overdue').innerText = d.overdue;
-            document.getElementById('st-rev').innerText = d.revenue + 'đ';
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function openMassEmailModal() {
+            document.getElementById('massEmailModal').classList.remove('hidden');
+            document.getElementById('mass-subject').value = '';
+            document.getElementById('mass-content').value = '';
+        }
+
+        function sendMassEmail(event) {
+            const subject = document.getElementById('mass-subject').value.trim();
+            const content = document.getElementById('mass-content').value.trim();
+
+            if(!subject || !content) { alert("Vui lòng điền đầy đủ Chủ đề và Nội dung!"); return; }
+
+            const btn = event.currentTarget;
+            const originHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân phối...';
+            btn.disabled = true;
+
+            fetch('/api/admin/oas/send-mass-email', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ subject: subject, content: content })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if(d.status === 'success') { alert('🎉 ' + d.message); closeModal('massEmailModal'); }
+                else { alert('Lỗi: ' + d.message); }
+            })
+            .catch(e => alert('Có lỗi xảy ra khi kết nối tới máy chủ gửi mail.'))
+            .finally(() => { btn.innerHTML = originHtml; btn.disabled = false; });
+        }
+
+        // --- LẤY DỮ LIỆU EIS KPIs ---
+        fetch('/api/admin/eis/kpis')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('kpi-util-val').innerText = data.utilization_rate + '%';
+                document.getElementById('kpi-util-bar').style.width = data.utilization_rate + '%';
+                document.getElementById('kpi-active-val').innerText = data.active_user_rate + '%';
+                document.getElementById('kpi-active-bar').style.width = data.active_user_rate + '%';
+
+                const overdueVal = document.getElementById('kpi-overdue-val');
+                const overdueStatus = document.getElementById('kpi-overdue-status');
+                const overdueIconBg = document.getElementById('kpi-overdue-icon-bg');
+                overdueVal.innerText = data.overdue_rate + '%';
+
+                if (data.overdue_rate < 10) {
+                    overdueVal.className = "text-3xl font-bold text-emerald-600 transition-colors";
+                    overdueIconBg.className = "w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500 text-xl transition-colors";
+                    overdueStatus.innerHTML = '<span class="text-xs font-bold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>An toàn</span>';
+                } else if (data.overdue_rate <= 20) {
+                    overdueVal.className = "text-3xl font-bold text-amber-500 transition-colors";
+                    overdueIconBg.className = "w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500 text-xl transition-colors";
+                    overdueStatus.innerHTML = '<span class="text-xs font-bold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full"><i class="fas fa-info-circle mr-1"></i>Cảnh báo</span>';
+                } else {
+                    overdueVal.className = "text-3xl font-bold text-rose-600 transition-colors";
+                    overdueIconBg.className = "w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 text-xl transition-colors";
+                    overdueStatus.innerHTML = '<span class="text-xs font-bold bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full pulse-border"><i class="fas fa-skull-crossbones mr-1"></i>Nguy hiểm</span>';
+                }
+
+                document.getElementById('kpi-fin-paid').innerHTML = data.financial.collected.toLocaleString() + 'đ <i class="fas fa-arrow-down text-xs ml-1"></i>';
+                document.getElementById('kpi-fin-unpaid').innerHTML = data.financial.outstanding.toLocaleString() + 'đ <i class="fas fa-arrow-up text-xs ml-1"></i>';
+
+                const totalFinancials = data.financial.collected + data.financial.outstanding;
+                const paidPercent = totalFinancials > 0 ? (data.financial.collected / totalFinancials) * 100 : 0;
+                document.getElementById('kpi-fin-bar').style.width = paidPercent + '%';
+            })
+            .catch(err => console.error("Lỗi khi tải EIS KPIs:", err));
+
+        // --- TREND ANALYSIS CÓ BỘ LỌC THỜI GIAN ---
+        let trendChartInstance = null;
+
+        function loadTrendChart() {
+            const period = document.getElementById('trend-period').value;
+            fetch(`/api/admin/dss/category-trends?period=${period}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (trendChartInstance) {
+                        trendChartInstance.data.labels = data.labels;
+                        trendChartInstance.data.datasets[0].data = data.data;
+                        trendChartInstance.update();
+                    } else {
+                        trendChartInstance = new Chart(document.getElementById('trendChart'), {
+                            type: 'bar',
+                            data: { labels: data.labels, datasets: [{ label: 'Lượt mượn', data: data.data, backgroundColor: '#6366f1', borderRadius: 4 }] },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } } }, plugins: { legend: { display: false } }, onClick: (evt, els) => { if(els.length > 0) openDrilldownModal(trendChartInstance.data.labels[els[0].index]); } }
+                        });
+                    }
+                });
+        }
+        loadTrendChart();
+
+        // --- ĐÃ ĐỒNG BỘ THỜI GIAN VÀO DRILL-DOWN ---
+        function openDrilldownModal(cat) {
+            document.getElementById('drilldownModal').classList.remove('hidden');
+            document.getElementById('modal-title').innerHTML = `<i class="fas fa-list-ol mr-2"></i>Top 5 sách ${cat}`;
+            document.getElementById('drilldown-list').innerHTML = '<li class="text-center text-slate-500 py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Đang tải dữ liệu...</li>';
+
+            // Lấy thời gian đang hiển thị trên biểu đồ
+            const currentPeriod = document.getElementById('trend-period').value;
+
+            fetch(`/api/admin/dss/drilldown?category=${encodeURIComponent(cat)}&period=${currentPeriod}`).then(r => r.json()).then(data => {
+                if (data.length === 0) { document.getElementById('drilldown-list').innerHTML = '<li class="text-center text-slate-500 py-4">Chưa có dữ liệu cho thể loại này</li>'; return; }
+                const listHtml = data.map((item, index) => `
+                    <li class="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-indigo-50/50 transition cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full ${index < 3 ? 'bg-indigo-500 text-white' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-xs font-bold">${index + 1}</span>
+                            <span class="font-medium text-slate-700 text-sm truncate max-w-[200px]">${item.title}</span>
+                        </div>
+                        <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded">${item.count} lượt</span>
+                    </li>
+                `).join('');
+                document.getElementById('drilldown-list').innerHTML = listHtml;
+            });
+        }
+
+        // --- HÀM XỬ LÝ WHAT-IF ANALYSIS (ĐÃ GẮN PERIOD) ---
+        function runWhatIf(event) {
+            const days = document.getElementById('wi-days').value;
+            const fine = document.getElementById('wi-fine').value;
+            const period = document.getElementById('wi-period').value;
+
+            const btn = event.currentTarget;
+            const originHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Đang tính toán...';
+            btn.disabled = true;
+
+            fetch('/api/admin/dss/what-if', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ max_days: days, fine_rate: fine, period: period })
+            }).then(r=>r.json()).then(d => {
+                setTimeout(() => {
+                    document.getElementById('wi-result').classList.remove('hidden');
+                    document.getElementById('wi-rev').innerText = d.projected_revenue.toLocaleString() + 'đ';
+
+                    // Hiển thị text báo Baseline doanh thu cũ để tiện so sánh
+                    document.getElementById('wi-baseline-txt').innerText = `(Gốc: ${d.baseline_revenue ? d.baseline_revenue.toLocaleString() : 0}đ)`;
+
+                    const diffEl = document.getElementById('wi-diff');
+                    if(d.diff_percent > 0) diffEl.innerHTML = `<span class="text-emerald-500"><i class="fas fa-arrow-up"></i> Tăng ${d.diff_percent}%</span>`;
+                    else if (d.diff_percent < 0) diffEl.innerHTML = `<span class="text-rose-500"><i class="fas fa-arrow-down"></i> Giảm ${Math.abs(d.diff_percent)}%</span>`;
+                    else diffEl.innerHTML = `<span class="text-slate-500"><i class="fas fa-minus"></i> Không đổi</span>`;
+
+                    btn.innerHTML = originHtml;
+                    btn.disabled = false;
+                }, 500);
+            });
+        }
+
+        // --- BẢNG CẢNH BÁO RỦI RO ---
+        fetch('/api/admin/dss/high-risk-users').then(r=>r.json()).then(data => {
+            const tbody = document.getElementById('high-risk-tbody');
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-emerald-500 font-medium"><i class="fas fa-check-circle mr-2"></i>Không phát hiện độc giả rủi ro</td></tr>'; }
+            else {
+                tbody.innerHTML = data.map(u => `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="py-3 px-4 font-medium">${u.msv}</td>
+                        <td class="py-3 px-4 truncate max-w-[120px]">${u.fullname}</td>
+                        <td class="py-3 px-4 text-rose-600 font-bold">${u.total_fine.toLocaleString()}đ</td>
+                        <td class="py-3 px-4 text-center">
+                            <span id="warn-cnt-${u.msv}" class="text-xs font-bold ${u.warning_count > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-500'} px-2 py-1 rounded-full">${u.warning_count} lần</span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="sendOasEmail('${u.msv}', ${u.total_fine}, ${u.overdue_books}, event)" class="text-xs bg-rose-100 text-rose-700 px-3 py-1.5 rounded-full hover:bg-rose-200 transition font-medium shadow-sm whitespace-nowrap" title="Gửi email nhắc nhở tự động">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         });
 
-        fetch('/api/admin/chart-data').then(r=>r.json()).then(data => {
-            // Line Chart
-            new Chart(document.getElementById('revenueChart'), {
-                type: 'line',
-                data: {
-                    labels: data.bar_labels,
-                    datasets: [{
-                        label: 'Doanh thu (VNĐ)',
-                        data: data.bar_data,
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+        function sendOasEmail(msv, total_fine, overdue_books, event) {
+            const btn = event.currentTarget; const originHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+            fetch('/api/admin/oas/send-warning-email', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ msv: msv, total_fine: total_fine, overdue_books: overdue_books }) })
+            .then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    btn.innerHTML = '<i class="fas fa-check"></i>'; btn.className = 'text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full transition font-medium shadow-sm whitespace-nowrap';
+                    let cntSpan = document.getElementById(`warn-cnt-${msv}`);
+                    cntSpan.innerText = (parseInt(cntSpan.innerText) + 1) + ' lần';
+                    cntSpan.className = 'text-xs font-bold bg-rose-100 text-rose-600 px-2 py-1 rounded-full';
+                } else { alert('Lỗi: ' + d.message); btn.innerHTML = originHtml; btn.disabled = false; }
+            }).catch(e => { alert('Lỗi API'); btn.innerHTML = originHtml; btn.disabled = false; });
+        }
 
-            // Doughnut Chart
-            new Chart(document.getElementById('statusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Sẵn có', 'Đang mượn'],
-                    datasets: [{
-                        data: data.pie_data,
-                        backgroundColor: ['#e2e8f0', '#6366f1'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
-            });
+        // --- BẢNG SÁCH ÍT TƯƠNG TÁC ---
+        fetch('/api/admin/dss/unused-books').then(r=>r.json()).then(data => {
+            const tbody = document.getElementById('unused-books-tbody');
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-emerald-500 font-medium"><i class="fas fa-check-circle mr-2"></i>Tất cả sách đều được luân chuyển tốt</td></tr>'; }
+            else {
+                tbody.innerHTML = data.map(b => `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="py-3 px-4 font-medium text-slate-500">${b.isbn}</td>
+                        <td class="py-3 px-4 text-slate-800 font-medium truncate max-w-[150px]" title="${b.title}">${b.title}</td>
+                        <td class="py-3 px-4 text-slate-500 text-xs">${b.category}</td>
+                        <td class="py-3 px-4 text-right">
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded font-medium">${b.qty_total} cuốn</span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
         });
     </script>
 </body>
