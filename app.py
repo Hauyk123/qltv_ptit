@@ -11,14 +11,37 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from flask_cors import CORS
-
+import os
+import urllib.parse
+from pymongo import MongoClient
 app = Flask(__name__)
 app.secret_key = 'PTIT_LIB_SECURE_KEY_2025'  # Key bảo mật session
 CORS(app)
 
-# KẾT NỐI MONGODB
-client = MongoClient('mongodb://localhost:27017/')
-db = client['LibManagerDB']
+
+
+# Thông tin đăng nhập từ ảnh bạn cung cấp
+username = "hauyk123"
+password = "Hauyk@123"
+
+# Mã hóa mật khẩu (biến 'Hauyk@123' thành 'Hauyk%40123')
+escaped_password = urllib.parse.quote_plus(password)
+
+# Ưu tiên lấy link từ biến môi trường của Render, nếu không có mới dùng link mặc định
+mongo_uri = os.environ.get('MONGO_URI')
+
+if not mongo_uri:
+    mongo_uri = f"mongodb+srv://{username}:{escaped_password}@cluster0.dcl7jiw.mongodb.net/LibManagerDB?retryWrites=true&w=majority"
+
+try:
+    client = MongoClient(mongo_uri)
+    db = client['LibManagerDB']
+    # Kiểm tra kết nối
+    client.admin.command('ping')
+    print("Kết nối MongoDB thành công!")
+except Exception as e:
+    print(f"Lỗi kết nối MongoDB: {e}")
+
 
 # --- ROUTING (ĐIỀU HƯỚNG HTML) ---
 @app.route('/')

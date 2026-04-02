@@ -1,0 +1,5 @@
+Flask
+pymongo[srv]
+werkzeug
+flask-cors
+gunicorn
